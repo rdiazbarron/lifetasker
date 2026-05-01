@@ -59,16 +59,37 @@ Health check:
 npm run dev
 ```
 
-## Prisma
+## Base de datos con Prisma
 El esquema Prisma está en:
 - `apps/api/prisma/schema.prisma`
 
-Para crear migraciones (cuando haya modelos):
+Comandos principales:
+
 ```bash
-npm run prisma:migrate -w apps/api
+# Formatear esquema
+npm run prisma:generate -w apps/api
+
+# Crear/aplicar migración en desarrollo
+npm run prisma:migrate -w apps/api -- --name init
+
+# Aplicar migraciones existentes (entorno no-dev)
+npm run prisma:migrate:deploy -w apps/api
+
+# Ejecutar seed de categorías por defecto
+npm run prisma:seed -w apps/api
+
+# Abrir Prisma Studio
+npm run prisma:studio -w apps/api
 ```
+
+Seed por defecto:
+- TECH
+- SALUD
+- TRABAJO
+- FAMILIA
 
 ## Notas
 - No se implementa autenticación en esta base.
 - No se implementa drag and drop en esta base.
-- No se implementan aún módulos de negocio.
+- No se implementan aún módulos REST de negocio.
+- No se implementan aún pantallas de negocio en frontend.

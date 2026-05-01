@@ -46,7 +46,7 @@ Acceptance criteria:
 
 ## Phase 2 - Prisma data model
 
-Status: Next
+Status: Done
 
 Goal:
 Implement the initial database model using Prisma.
