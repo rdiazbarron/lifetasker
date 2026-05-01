@@ -31,8 +31,6 @@ pnpm-debug.log*
 !.env.example
 
 ## Prisma
-apps/api/prisma/migrations/
-
 ## Cache / temp
 .cache/
 **/.cache/

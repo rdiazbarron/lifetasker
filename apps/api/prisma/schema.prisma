@@ -6,3 +6,86 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  name           String?
+  blockTypes     BlockType[]
+  weeklyPlans    WeeklyPlan[]
+  blockInstances BlockInstance[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Category {
+  id         String      @id @default(cuid())
+  key        String      @unique
+  name       String
+  blockTypes BlockType[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model BlockType {
+  id             String           @id @default(cuid())
+  userId         String
+  categoryId     String
+  name           String
+  description    String?
+  weeklyPlanItems WeeklyPlanItem[]
+  blockInstances BlockInstance[]
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+  @@unique([userId, name])
+}
+
+model WeeklyPlan {
+  id          String           @id @default(cuid())
+  userId      String
+  weekStart   DateTime
+  weekEnd     DateTime
+  planItems   WeeklyPlanItem[]
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId])
+  @@unique([userId, weekStart])
+}
+
+model WeeklyPlanItem {
+  id           String      @id @default(cuid())
+  weeklyPlanId String
+  blockTypeId  String
+  targetCount  Int
+  weeklyPlan   WeeklyPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  blockType    BlockType   @relation(fields: [blockTypeId], references: [id], onDelete: Restrict)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([weeklyPlanId])
+  @@index([blockTypeId])
+  @@unique([weeklyPlanId, blockTypeId])
+}
+
+model BlockInstance {
+  id          String    @id @default(cuid())
+  userId      String
+  blockTypeId String
+  completedAt DateTime
+  scheduledAt DateTime?
+  notes       String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blockType   BlockType @relation(fields: [blockTypeId], references: [id], onDelete: Restrict)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([blockTypeId])
+  @@index([completedAt])
+}
