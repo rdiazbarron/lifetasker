@@ -91,7 +91,7 @@ Acceptance criteria:
 
 ## Phase 3 - Backend REST API
 
-Status: Pending
+Status: Done
 
 Goal:
 Implement the core NestJS REST API.
@@ -222,4 +222,4 @@ Possible options:
 
 ## Current next task
 
-Implement Phase 2: Prisma data model, migration, seed categories, and database documentation.
+Implement Phase 4: Frontend MVP screens and components.
