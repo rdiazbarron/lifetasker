@@ -1,9 +1,9 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
-export type Category = { id: string; name: string };
+export type Category = { id: string; name: string; key?: string };
 export type BlockType = { id: string; name: string; durationMinutes: number; categoryId: string; description?: string; category?: Category };
 export type WeeklyPlanItem = { id?: string; blockTypeId: string; targetCount: number };
-export type WeeklyPlan = { id?: string; weekStart: string; weekEnd: string; planItems: WeeklyPlanItem[]; message?: string };
+export type WeeklyPlan = { id: string; weekStart: string; weekEnd: string; planItems: WeeklyPlanItem[] };
 export type Progress = {
   totalTargetBlocks: number;
   totalCompletedBlocks: number;
@@ -34,3 +34,11 @@ export const api = {
   completeBlock: (body: { blockTypeId: string; notes?: string; completedAt?: string }) => request('/block-instances/complete', { method: 'POST', body: JSON.stringify(body) }),
   getCurrentProgress: () => request<Progress>('/progress/current-week')
 };
+
+export const CATEGORY_STYLES = ['bg-sky-500/20 text-sky-300 border-sky-500/30', 'bg-violet-500/20 text-violet-300 border-violet-500/30', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', 'bg-amber-500/20 text-amber-300 border-amber-500/30'];
+
+export function formatWeekRange(weekStart: string, weekEnd: string) {
+  const start = new Date(weekStart);
+  const end = new Date(weekEnd);
+  return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
