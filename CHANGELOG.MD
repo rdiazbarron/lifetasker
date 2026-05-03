@@ -32,3 +32,21 @@
 ### Next
 
 - Implement Phase 3 backend REST modules.
+
+
+## 2026-05-03
+
+### Added
+
+- Implemented Phase 3 backend REST API in NestJS with modules:
+  - `categories`
+  - `block-types`
+  - `weekly-plans`
+  - `block-instances`
+  - `progress`
+- Added Prisma global service/module integration.
+- Added DTO validation with global `ValidationPipe`.
+- Added API URI versioning (`/api/v1`).
+- Added current-week progress aggregation and weekly level calculation.
+- Updated README with endpoint usage examples.
+- Updated project plan status for Phase 3.

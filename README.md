@@ -91,5 +91,34 @@ Seed por defecto:
 ## Notas
 - No se implementa autenticación en esta base.
 - No se implementa drag and drop en esta base.
-- No se implementan aún módulos REST de negocio.
+- Se implementan módulos REST de negocio en backend (Phase 3) con usuario demo temporal.
 - No se implementan aún pantallas de negocio en frontend.
+
+
+## Backend REST API (Phase 3)
+Base URL versionada: `http://localhost:4000/api/v1`
+
+Ejemplos:
+
+```bash
+# Categorías
+curl http://localhost:4000/api/v1/categories
+
+# Crear block type
+curl -X POST http://localhost:4000/api/v1/block-types   -H "Content-Type: application/json"   -d '{"name":"Deep Work","durationMinutes":60,"categoryId":"<categoryId>","description":"Focus session"}'
+
+# Listar block types
+curl http://localhost:4000/api/v1/block-types
+
+# Crear plan semanal
+curl -X POST http://localhost:4000/api/v1/weekly-plans   -H "Content-Type: application/json"   -d '{"weekStartDate":"2026-05-04","items":[{"blockTypeId":"<id>","targetCount":5}]}'
+
+# Obtener plan semanal actual
+curl http://localhost:4000/api/v1/weekly-plans/current
+
+# Completar bloque
+curl -X POST http://localhost:4000/api/v1/block-instances/complete   -H "Content-Type: application/json"   -d '{"blockTypeId":"<id>","notes":"Completed after lunch"}'
+
+# Progreso semanal
+curl http://localhost:4000/api/v1/progress/current-week
+```
