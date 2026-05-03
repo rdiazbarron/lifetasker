@@ -1,0 +1,2 @@
+import { Progress } from '../lib/api';
+export function ProgressByCategory({ progress }: { progress: Progress }) { return <section className="rounded-lg border border-slate-700 p-4"><h3 className="font-semibold mb-2">Progress by category</h3>{progress.progressByCategory.length===0?<p className="text-slate-400">No progress yet.</p>:<ul className="space-y-1">{progress.progressByCategory.map(i=><li key={i.categoryId} className="text-sm">{i.categoryName}: {i.completed}/{i.target}</li>)}</ul>}</section>; }
