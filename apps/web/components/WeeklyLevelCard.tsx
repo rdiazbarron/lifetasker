@@ -1,0 +1,2 @@
+import { Progress } from '../lib/api';
+export function WeeklyLevelCard({ progress }: { progress: Progress }) { return <section className="rounded-lg border border-slate-700 p-4"><h2 className="text-xl font-semibold">Weekly Level {progress.weeklyLevel}</h2><p className="text-slate-300">{progress.totalCompletedBlocks}/{progress.totalTargetBlocks} blocks · {progress.progressPercentage}%</p></section>; }

@@ -1,0 +1,13 @@
+'use client';
+import { FormEvent, useState } from 'react';
+import { Category } from '../lib/api';
+
+export function BlockTypeForm({ categories, onSubmit }: { categories: Category[]; onSubmit: (data: { name: string; durationMinutes: number; categoryId: string; description?: string }) => Promise<void>; }) {
+  const [name, setName] = useState(''); const [durationMinutes, setDurationMinutes] = useState(30); const [categoryId, setCategoryId] = useState(''); const [description, setDescription] = useState(''); const [error, setError] = useState('');
+  async function handleSubmit(e: FormEvent) { e.preventDefault(); setError(''); if (!name.trim()) return setError('Block type name is required.'); if (!categoryId) return setError('Category is required.'); await onSubmit({ name: name.trim(), durationMinutes, categoryId, description: description.trim() || undefined }); setName(''); setDescription(''); }
+  return <form onSubmit={handleSubmit} className="rounded-lg border border-slate-700 p-4 space-y-3"><h2 className="text-lg font-semibold">Create block type</h2>{error && <p className="text-red-400 text-sm">{error}</p>}<input className="w-full rounded bg-slate-900 border border-slate-700 p-2" placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
+  <input className="w-full rounded bg-slate-900 border border-slate-700 p-2" type="number" min={1} value={durationMinutes} onChange={e => setDurationMinutes(Number(e.target.value))} />
+  <select className="w-full rounded bg-slate-900 border border-slate-700 p-2" value={categoryId} onChange={e => setCategoryId(e.target.value)}><option value="">Select category</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+  <textarea className="w-full rounded bg-slate-900 border border-slate-700 p-2" placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} />
+  <button className="rounded bg-sky-500 px-4 py-2 text-slate-950 font-medium">Save</button></form>;
+}

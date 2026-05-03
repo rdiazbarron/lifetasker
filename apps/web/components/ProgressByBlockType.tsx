@@ -1,0 +1,2 @@
+import { Progress } from '../lib/api';
+export function ProgressByBlockType({ progress }: { progress: Progress }) { return <section className="rounded-lg border border-slate-700 p-4"><h3 className="font-semibold mb-2">Progress by block type</h3>{progress.progressByBlockType.length===0?<p className="text-slate-400">No progress yet.</p>:<ul className="space-y-1">{progress.progressByBlockType.map(i=><li key={i.blockTypeId} className="text-sm">{i.blockTypeName}: {i.completed}/{i.target}</li>)}</ul>}</section>; }
