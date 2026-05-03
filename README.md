@@ -28,7 +28,15 @@ Frontend reads backend URL from:
 NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ```
 
-If missing, frontend uses default fallback: `http://localhost:4000/api/v1`.
+Backend CORS allows frontend origins from:
+
+```bash
+CORS_ORIGINS=http://localhost:3000
+```
+
+Use comma-separated values for multiple origins.
+
+If `NEXT_PUBLIC_API_URL` is missing, frontend uses default fallback: `http://localhost:4000/api/v1`.
 
 ## Run
 ```bash
@@ -37,10 +45,17 @@ npm run dev:web   # http://localhost:3000
 npm run dev       # both
 ```
 
-## Frontend MVP pages (Phase 4)
-- `/dashboard`: weekly level, progress by category/block type, and block completion actions.
-- `/block-types`: create, list, update, and delete block types.
-- `/weekly-plan`: load/create current weekly plan and edit weekly target counts by block type.
+## Current behavior highlights
+- `GET /api/v1/weekly-plans/current` always returns a current-week plan.
+- If no current-week plan exists, backend lazily creates one.
+- New week plan clones prior week target items when available.
+- Progress stays at zero at week start until current-week block completions are logged.
+- No authentication in MVP (demo user flow remains active).
+
+## Frontend MVP pages
+- `/dashboard`: weekly level summary, progress by category/block type, quick completion actions.
+- `/block-types`: create/list/update/delete block types with clearer category markers and form layout.
+- `/weekly-plan`: current week range and weekly target editor with save feedback.
 
 ## Notes
 - No authentication in MVP.
