@@ -28,7 +28,15 @@ Frontend reads backend URL from:
 NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ```
 
-If missing, frontend uses default fallback: `http://localhost:4000/api/v1`.
+Backend CORS allows frontend origins from:
+
+```bash
+CORS_ORIGINS=http://localhost:3000
+```
+
+Use comma-separated values for multiple origins.
+
+If `NEXT_PUBLIC_API_URL` is missing, frontend uses default fallback: `http://localhost:4000/api/v1`.
 
 ## Run
 ```bash
