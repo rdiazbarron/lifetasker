@@ -18,6 +18,9 @@ cp .env.example .env
 docker compose up -d
 npm run prisma:generate -w apps/api
 npm run prisma:migrate -w apps/api -- --name init
+# if you pull new changes later:
+npm run prisma:migrate -w apps/api
+npm run prisma:generate -w apps/api
 npm run prisma:seed -w apps/api
 ```
 

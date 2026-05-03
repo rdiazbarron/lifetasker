@@ -31,8 +31,9 @@ model BlockType {
   id             String           @id @default(cuid())
   userId         String
   categoryId     String
-  name           String
-  description    String?
+  name            String
+  durationMinutes Int
+  description     String?
   weeklyPlanItems WeeklyPlanItem[]
   blockInstances BlockInstance[]
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
