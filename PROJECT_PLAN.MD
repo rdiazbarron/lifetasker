@@ -125,7 +125,7 @@ Rules:
 
 ## Phase 4 - Frontend MVP
 
-Status: Pending
+Status: Done
 
 Goal:
 Build the basic functional UI.
@@ -154,6 +154,11 @@ Rules:
 - Do not create a daily todo-list.
 - Do not require assigning blocks to days.
 - The UI must focus on weekly flexible progress.
+
+Implemented (2026-05-03):
+- Added frontend routes: `/dashboard`, `/block-types`, `/weekly-plan`.
+- Added components: `BlockTypeForm`, `BlockTypeList`, `WeeklyPlanEditor`, `CompleteBlockButton`, `ProgressByBlockType`, `ProgressByCategory`, `WeeklyLevelCard`.
+- Added frontend API helper with `NEXT_PUBLIC_API_URL` support and fallback to `http://localhost:4000/api/v1`.
 
 ---
 
