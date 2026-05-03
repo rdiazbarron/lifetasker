@@ -13,6 +13,7 @@ Users define reusable activity block types, set weekly targets, complete blocks 
 Status: Done
 
 Completed:
+
 - GitHub repository created.
 - `main` branch created.
 - `develop` branch created.
@@ -26,6 +27,7 @@ Completed:
 Status: Done
 
 Completed:
+
 - Monorepo structure created.
 - `apps/web` created with Next.js App Router.
 - `apps/api` created with NestJS.
@@ -37,6 +39,7 @@ Completed:
 - Backend likely runs on port 4000.
 
 Acceptance criteria:
+
 - Frontend runs locally.
 - Backend runs locally.
 - Basic project structure exists.
@@ -52,6 +55,7 @@ Goal:
 Implement the initial database model using Prisma.
 
 Entities:
+
 - User
 - Category
 - BlockType
@@ -60,6 +64,7 @@ Entities:
 - BlockInstance
 
 Business rules:
+
 - LifeTasker is not a daily todo-list.
 - A user can create reusable block types.
 - A block type belongs to a category.
@@ -72,12 +77,14 @@ Business rules:
 - `scheduledAt` can exist as optional for future drag and drop.
 
 Seed data:
+
 - TECH
 - SALUD
 - TRABAJO
 - FAMILIA
 
 Acceptance criteria:
+
 - Prisma schema is updated.
 - Initial migration exists.
 - Seed script creates default categories.
@@ -97,6 +104,7 @@ Goal:
 Implement the core NestJS REST API.
 
 Modules:
+
 - categories
 - block-types
 - weekly-plans
@@ -104,6 +112,7 @@ Modules:
 - progress
 
 Endpoints:
+
 - GET /categories
 - POST /block-types
 - GET /block-types
@@ -116,6 +125,7 @@ Endpoints:
 - GET /progress/current-week
 
 Rules:
+
 - Use DTOs and validation.
 - Use PrismaService.
 - Use a temporary fixed demo user until authentication exists.
@@ -131,11 +141,13 @@ Goal:
 Build the basic functional UI.
 
 Pages:
+
 - /dashboard
 - /block-types
 - /weekly-plan
 
 Components:
+
 - BlockTypeForm
 - BlockTypeList
 - WeeklyPlanEditor
@@ -145,17 +157,20 @@ Components:
 - WeeklyLevelCard
 
 Flow:
+
 1. Create block type.
 2. Define weekly targets.
 3. Complete blocks.
 4. View weekly progress.
 
 Rules:
+
 - Do not create a daily todo-list.
 - Do not require assigning blocks to days.
 - The UI must focus on weekly flexible progress.
 
 Implemented (2026-05-03):
+
 - Added frontend routes: `/dashboard`, `/block-types`, `/weekly-plan`.
 - Added components: `BlockTypeForm`, `BlockTypeList`, `WeeklyPlanEditor`, `CompleteBlockButton`, `ProgressByBlockType`, `ProgressByCategory`, `WeeklyLevelCard`.
 - Added frontend API helper with `NEXT_PUBLIC_API_URL` support and fallback to `http://localhost:4000/api/v1`.
@@ -170,6 +185,7 @@ Goal:
 Automatically create a new weekly plan when a new week starts.
 
 Suggested approach:
+
 - When requesting the current weekly plan, check whether one exists for the current week.
 - If none exists, clone targets from the previous week.
 - Start counters from zero because no block instances exist for the new week.
@@ -185,6 +201,7 @@ Goal:
 Improve product experience.
 
 Ideas:
+
 - Better dashboard layout.
 - Category colors.
 - Progress cards.
@@ -201,12 +218,14 @@ Goal:
 Add optional visual calendar placement.
 
 Rules:
+
 - Drag and drop must be optional.
 - Blocks must remain weekly-flexible.
 - Day/time assignment must not become mandatory.
 - Use `scheduledAt` optionally.
 
 Suggested library:
+
 - dnd-kit
 
 ---
@@ -219,6 +238,7 @@ Goal:
 Add real users and remove temporary demo user.
 
 Possible options:
+
 - JWT auth in NestJS.
 - Auth.js / NextAuth-style integration.
 - Other auth provider if chosen later.

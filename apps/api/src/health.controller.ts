@@ -1,12 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get } from "@nestjs/common";
 
-@Controller('health')
+@Controller("health")
 export class HealthController {
   @Get()
   getHealth() {
     return {
-      status: 'ok',
-      service: 'lifetasker-api'
+      status: "ok",
+      service: "lifetasker-api",
     };
   }
 }

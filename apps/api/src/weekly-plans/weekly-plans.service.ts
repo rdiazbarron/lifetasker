@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { DEMO_USER_EMAIL, DEMO_USER_NAME } from '../common/demo-user';
-import { getWeekBounds } from '../common/week';
-import { CreateWeeklyPlanDto, UpdateWeeklyPlanItemsDto } from './dto/create-weekly-plan.dto';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "../common/demo-user";
+import { getWeekBounds } from "../common/week";
+import {
+  CreateWeeklyPlanDto,
+  UpdateWeeklyPlanItemsDto,
+} from "./dto/create-weekly-plan.dto";
 
 @Injectable()
 export class WeeklyPlansService {
@@ -13,7 +20,7 @@ export class WeeklyPlansService {
       await this.prisma.user.upsert({
         where: { email: DEMO_USER_EMAIL },
         update: {},
-        create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME }
+        create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME },
       })
     ).id;
   }
@@ -21,12 +28,15 @@ export class WeeklyPlansService {
   async create(dto: CreateWeeklyPlanDto) {
     const userId = await this.userId();
     const { weekStart, weekEnd } = getWeekBounds(new Date(dto.weekStartDate));
-    const existing = await this.prisma.weeklyPlan.findUnique({ where: { userId_weekStart: { userId, weekStart } } });
-    if (existing) throw new BadRequestException('Weekly plan already exists for this week');
+    const existing = await this.prisma.weeklyPlan.findUnique({
+      where: { userId_weekStart: { userId, weekStart } },
+    });
+    if (existing)
+      throw new BadRequestException("Weekly plan already exists for this week");
 
     return this.prisma.weeklyPlan.create({
       data: { userId, weekStart, weekEnd, planItems: { create: dto.items } },
-      include: { planItems: true }
+      include: { planItems: true },
     });
   }
 
@@ -36,14 +46,14 @@ export class WeeklyPlansService {
 
     const existingPlan = await this.prisma.weeklyPlan.findUnique({
       where: { userId_weekStart: { userId, weekStart: now.weekStart } },
-      include: { planItems: true }
+      include: { planItems: true },
     });
     if (existingPlan) return existingPlan;
 
     const previousPlan = await this.prisma.weeklyPlan.findFirst({
       where: { userId, weekStart: { lt: now.weekStart } },
       include: { planItems: true },
-      orderBy: { weekStart: 'desc' }
+      orderBy: { weekStart: "desc" },
     });
 
     return this.prisma.weeklyPlan.create({
@@ -55,24 +65,33 @@ export class WeeklyPlansService {
           create:
             previousPlan?.planItems.map((item) => ({
               blockTypeId: item.blockTypeId,
-              targetCount: item.targetCount
-            })) ?? []
-        }
+              targetCount: item.targetCount,
+            })) ?? [],
+        },
       },
-      include: { planItems: true }
+      include: { planItems: true },
     });
   }
 
   async findOne(id: string) {
     const userId = await this.userId();
-    const p = await this.prisma.weeklyPlan.findFirst({ where: { id, userId }, include: { planItems: true } });
-    if (!p) throw new NotFoundException('Weekly plan not found');
+    const p = await this.prisma.weeklyPlan.findFirst({
+      where: { id, userId },
+      include: { planItems: true },
+    });
+    if (!p) throw new NotFoundException("Weekly plan not found");
     return p;
   }
 
   async updateItems(id: string, dto: UpdateWeeklyPlanItemsDto) {
     const p = await this.findOne(id);
-    await this.prisma.weeklyPlanItem.deleteMany({ where: { weeklyPlanId: p.id } });
-    return this.prisma.weeklyPlan.update({ where: { id }, data: { planItems: { create: dto.items } }, include: { planItems: true } });
+    await this.prisma.weeklyPlanItem.deleteMany({
+      where: { weeklyPlanId: p.id },
+    });
+    return this.prisma.weeklyPlan.update({
+      where: { id },
+      data: { planItems: { create: dto.items } },
+      include: { planItems: true },
+    });
   }
 }

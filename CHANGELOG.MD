@@ -33,7 +33,6 @@
 
 - Implement Phase 3 backend REST modules.
 
-
 ## 2026-05-03
 
 ### Added
@@ -50,7 +49,6 @@
 - Added current-week progress aggregation and weekly level calculation.
 - Updated README with endpoint usage examples.
 - Updated project plan status for Phase 3.
-
 
 ## 2026-05-03
 

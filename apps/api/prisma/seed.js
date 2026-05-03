@@ -1,12 +1,12 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
 const defaultCategories = [
-  { key: 'TECH', name: 'TECH' },
-  { key: 'SALUD', name: 'SALUD' },
-  { key: 'TRABAJO', name: 'TRABAJO' },
-  { key: 'FAMILIA', name: 'FAMILIA' },
+  { key: "TECH", name: "TECH" },
+  { key: "SALUD", name: "SALUD" },
+  { key: "TRABAJO", name: "TRABAJO" },
+  { key: "FAMILIA", name: "FAMILIA" },
 ];
 
 async function main() {
@@ -18,12 +18,12 @@ async function main() {
     });
   }
 
-  console.log('Default categories seeded successfully.');
+  console.log("Default categories seeded successfully.");
 }
 
 main()
   .catch((error) => {
-    console.error('Seed failed:', error);
+    console.error("Seed failed:", error);
     process.exit(1);
   })
   .finally(async () => {

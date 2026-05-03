@@ -1,5 +1,7 @@
 export function getWeekBounds(date: Date) {
-  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const utcDate = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   const day = utcDate.getUTCDay();
   const diffToMonday = (day + 6) % 7;
   const weekStart = new Date(utcDate);

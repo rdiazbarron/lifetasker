@@ -8,4 +8,5 @@
 - Phase 6: UI improvements — Done
 
 ## Next Task
+
 - Phase 7: Authentication and user-specific accounts (replace demo user flow).
