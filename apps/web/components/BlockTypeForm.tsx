@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Input, Select } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Input, Select, SelectItem } from "@heroui/react";
 import { FormEvent, useState } from "react";
 import { Category } from "../lib/api";
 
@@ -45,8 +45,8 @@ export function BlockTypeForm({
 
   return (
     <Card>
-      <Card.Header><h2 className="text-lg font-semibold">Create block type</h2></Card.Header>
-      <Card.Content>
+      <CardHeader><h2 className="text-lg font-semibold">Create block type</h2></CardHeader>
+      <CardBody>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input label="Name" placeholder="Deep Work" value={name} onValueChange={setName} isRequired />
           <Input
@@ -62,7 +62,7 @@ export function BlockTypeForm({
             onSelectionChange={(keys) => setCategoryId(String(Array.from(keys)[0] ?? ""))}
           >
             {categories.map((c) => (
-              <Select.Item key={c.id}>{c.name}</Select.Item>
+              <SelectItem key={c.id}>{c.name}</SelectItem>
             ))}
           </Select>
           <Input
@@ -74,7 +74,7 @@ export function BlockTypeForm({
           {error && <p className="text-sm text-danger">{error}</p>}
           <Button color="primary" type="submit" isLoading={isSaving}>Save block type</Button>
         </form>
-      </Card.Content>
+      </CardBody>
     </Card>
   );
 }
