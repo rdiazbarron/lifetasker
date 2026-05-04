@@ -54,7 +54,7 @@ export function WeeklyPlanEditor({
               onChange={(e) =>
                 setValues((s) => ({ ...s, [bt.id]: Number(e.target.value) }))
               }
-              className="w-24 rounded bg-slate-900 border border-slate-700 p-1"
+              className="w-24 rounded bg-slate-900 border border-slate-700 p-1 text-slate-950 "
             />
           </div>
         ))}

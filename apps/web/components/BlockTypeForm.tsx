@@ -14,11 +14,13 @@ export function BlockTypeForm({
     description?: string;
   }) => Promise<void>;
 }) {
+
   const [name, setName] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -33,17 +35,18 @@ export function BlockTypeForm({
     setName("");
     setDescription("");
   }
+  
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-lg border border-slate-700 p-4 space-y-3 bg-slate-900/40"
+      className="rounded-lg border border-slate-700 p-4 space-y-3 bg-slate-900/40 font-black"
     >
       <h2 className="text-lg font-semibold">Create block type</h2>
       {error && <p className="text-red-400 text-sm">{error}</p>}
-      <label className="text-sm text-slate-300">
+      <label className="text-sm">
         Name
         <input
-          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2"
+          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2 text-slate-950 "
           placeholder="Deep Work"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -52,7 +55,7 @@ export function BlockTypeForm({
       <label className="text-sm text-slate-300">
         Duration (minutes)
         <input
-          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2"
+          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2 text-slate-950"
           type="number"
           min={1}
           value={durationMinutes}
@@ -62,7 +65,7 @@ export function BlockTypeForm({
       <label className="text-sm text-slate-300">
         Category
         <select
-          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2"
+          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2 text-slate-950"
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
         >
@@ -77,7 +80,7 @@ export function BlockTypeForm({
       <label className="text-sm text-slate-300">
         Description
         <textarea
-          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2"
+          className="mt-1 w-full rounded bg-slate-900 border border-slate-700 p-2 text-slate-950"
           placeholder="Optional note"
           value={description}
           onChange={(e) => setDescription(e.target.value)}

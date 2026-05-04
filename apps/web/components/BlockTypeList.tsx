@@ -44,7 +44,7 @@ export function BlockTypeList({
           <div className="mt-2 flex flex-wrap gap-2">
             <select
               defaultValue={bt.categoryId}
-              className="rounded bg-slate-900 border border-slate-700 p-1"
+              className="rounded bg-slate-900 border border-slate-700 p-1 text-slate-950"
               onChange={(e) => onUpdate(bt.id, { categoryId: e.target.value })}
             >
               {categories.map((c) => (

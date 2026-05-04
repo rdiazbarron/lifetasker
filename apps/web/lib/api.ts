@@ -1,7 +1,12 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
-export type Category = { id: string; name: string; key?: string };
+export type Category = {
+  id: string;
+  name: string;
+  key?: string;
+};
+
 export type BlockType = {
   id: string;
   name: string;
@@ -10,17 +15,20 @@ export type BlockType = {
   description?: string;
   category?: Category;
 };
+
 export type WeeklyPlanItem = {
   id?: string;
   blockTypeId: string;
   targetCount: number;
 };
+
 export type WeeklyPlan = {
   id: string;
   weekStart: string;
   weekEnd: string;
   planItems: WeeklyPlanItem[];
 };
+
 export type Progress = {
   totalTargetBlocks: number;
   totalCompletedBlocks: number;
