@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "../common/demo-user";
 import { getWeekBounds } from "../common/week";
@@ -33,6 +33,27 @@ export class BlockInstancesService {
       },
     });
   }
+
+  async undoLast(blockTypeId: string) {
+    const userId = await this.userId();
+    const { weekStart, weekEnd } = getWeekBounds(new Date());
+
+    const latest = await this.prisma.blockInstance.findFirst({
+      where: {
+        userId,
+        blockTypeId,
+        completedAt: { gte: weekStart, lte: weekEnd },
+      },
+      orderBy: { completedAt: "desc" },
+    });
+
+    if (!latest) {
+      throw new NotFoundException("No completion found this week for this block type.");
+    }
+
+    return this.prisma.blockInstance.delete({ where: { id: latest.id } });
+  }
+
   async currentWeek() {
     const userId = await this.userId();
     const { weekStart, weekEnd } = getWeekBounds(new Date());

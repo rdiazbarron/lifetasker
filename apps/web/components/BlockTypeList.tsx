@@ -3,6 +3,16 @@
 import { Button, Card, Label, ListBox, Select } from "@heroui/react";
 import { BlockType, Category } from "../lib/api";
 
+function normalizeSelectionKey(key: unknown): string {
+  if (typeof key === "string" || typeof key === "number") return String(key);
+  if (key && typeof key === "object" && "currentKey" in (key as Record<string, unknown>)) {
+    const currentKey = (key as { currentKey?: string | number | null }).currentKey;
+    return currentKey ? String(currentKey) : "";
+  }
+  return "";
+}
+
+
 export function BlockTypeList({
   blockTypes,
   categories,
@@ -58,7 +68,7 @@ export function BlockTypeList({
                 <Select
                   selectedKey={bt.categoryId || null}
                   onSelectionChange={(key) => {
-                    const categoryId = key ? String(key) : bt.categoryId;
+                    const categoryId = normalizeSelectionKey(key) || bt.categoryId;
 
                     if (categoryId && categoryId !== bt.categoryId) {
                       onUpdate(bt.id, { categoryId });
