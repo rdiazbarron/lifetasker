@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-05-04
+
+work
+
+- Refactored frontend MVP screens (`/dashboard`, `/block-types`, `/weekly-plan`) to consistently use HeroUI cards, buttons, inputs, selects, chips, progress bars, dividers, tooltips, and spinners.
+- Added Next.js App Router HeroUI provider wiring via `apps/web/app/providers.tsx` and wrapped root layout with `HeroUIProvider`.
+- Updated dashboard quick-complete and progress views with clearer loading, empty, and status states while preserving existing weekly-flex MVP flow.
+
+
 ## 2026-05-03
 
 codex/implement-phase-5-and-phase-6-features-0x1dcu

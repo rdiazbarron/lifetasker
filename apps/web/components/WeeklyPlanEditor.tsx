@@ -1,4 +1,6 @@
 "use client";
+
+import { Button, Card, CardBody, CardFooter, CardHeader, Divider, Input } from "@heroui/react";
 import { useState } from "react";
 import { BlockType, WeeklyPlanItem } from "../lib/api";
 
@@ -13,58 +15,54 @@ export function WeeklyPlanEditor({
 }) {
   const [values, setValues] = useState<Record<string, number>>(() =>
     Object.fromEntries(
-      blockTypes.map((b) => [
-        b.id,
-        initialItems.find((i) => i.blockTypeId === b.id)?.targetCount ?? 0,
-      ]),
+      blockTypes.map((b) => [b.id, initialItems.find((i) => i.blockTypeId === b.id)?.targetCount ?? 0]),
     ),
   );
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
   async function save() {
     setError("");
-    for (const v of Object.values(values))
-      if (!Number.isInteger(v) || v < 0)
-        return setError("Target count must be a non-negative integer.");
-    await onSave(
-      Object.entries(values)
-        .filter(([, v]) => v > 0)
-        .map(([blockTypeId, targetCount]) => ({ blockTypeId, targetCount })),
-    );
+    for (const v of Object.values(values)) {
+      if (!Number.isInteger(v) || v < 0) return setError("Target count must be a non-negative integer.");
+    }
+    setIsSaving(true);
+    try {
+      await onSave(
+        Object.entries(values)
+          .filter(([, v]) => v > 0)
+          .map(([blockTypeId, targetCount]) => ({ blockTypeId, targetCount })),
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
+
   return (
-    <section className="rounded-lg border border-slate-700 p-4">
-      <div className="flex items-center justify-between mb-3">
+    <Card>
+      <CardHeader className="flex-col items-start">
         <h2 className="font-semibold">Weekly targets</h2>
-        <p className="text-xs text-slate-400">
-          Set flexible total counts for this week.
-        </p>
-      </div>
-      {error && <p className="text-red-400 text-sm mb-2">{error}</p>}
-      <div className="space-y-2">
+        <p className="text-xs text-slate-400">Set flexible total counts for this week.</p>
+      </CardHeader>
+      <Divider />
+      <CardBody className="space-y-3">
         {blockTypes.map((bt) => (
-          <div
-            key={bt.id}
-            className="flex items-center justify-between gap-4 rounded bg-slate-900/40 p-2"
-          >
+          <div key={bt.id} className="flex items-center justify-between gap-4">
             <span>{bt.name}</span>
-            <input
+            <Input
               type="number"
               min={0}
-              value={values[bt.id] ?? 0}
-              onChange={(e) =>
-                setValues((s) => ({ ...s, [bt.id]: Number(e.target.value) }))
-              }
-              className="w-24 rounded bg-slate-900 border border-slate-700 p-1 text-slate-950 "
+              className="w-24"
+              value={String(values[bt.id] ?? 0)}
+              onValueChange={(value) => setValues((s) => ({ ...s, [bt.id]: Number(value) || 0 }))}
             />
           </div>
         ))}
-      </div>
-      <button
-        onClick={save}
-        className="mt-4 rounded bg-sky-500 px-4 py-2 text-slate-950 font-medium"
-      >
-        Save weekly targets
-      </button>
-    </section>
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </CardBody>
+      <CardFooter>
+        <Button color="primary" onPress={save} isLoading={isSaving}>Save weekly targets</Button>
+      </CardFooter>
+    </Card>
   );
 }

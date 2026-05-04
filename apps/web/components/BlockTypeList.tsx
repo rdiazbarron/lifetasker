@@ -1,5 +1,7 @@
 "use client";
-import { BlockType, CATEGORY_STYLES, Category } from "../lib/api";
+
+import { Button, Card, CardBody, CardHeader, Chip, Select, SelectItem } from "@heroui/react";
+import { BlockType, Category } from "../lib/api";
 
 export function BlockTypeList({
   blockTypes,
@@ -12,55 +14,37 @@ export function BlockTypeList({
   onUpdate: (id: string, data: Partial<BlockType>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  if (!blockTypes.length)
-    return (
-      <p className="rounded border border-slate-700 p-4 text-slate-300">
-        No block types yet. Add your first weekly block type.
-      </p>
-    );
+  if (!blockTypes.length) {
+    return <Card><CardBody><p className="text-slate-400">No block types yet. Add your first weekly block type.</p></CardBody></Card>;
+  }
+
   return (
     <div className="space-y-3">
-      {blockTypes.map((bt, idx) => (
-        <div
-          key={bt.id}
-          className="rounded border border-slate-700 p-3 bg-slate-900/30"
-        >
-          <div className="flex justify-between gap-2">
+      {blockTypes.map((bt) => (
+        <Card key={bt.id}>
+          <CardHeader className="flex justify-between gap-2">
             <div>
               <p className="font-medium">{bt.name}</p>
-              <p className="text-sm text-slate-400">
-                <span
-                  className={`mr-2 rounded border px-2 py-0.5 text-xs ${CATEGORY_STYLES[idx % CATEGORY_STYLES.length]}`}
-                >
-                  {bt.category?.name ?? "Uncategorized"}
-                </span>
-                {bt.durationMinutes} min
-              </p>
+              <p className="text-sm text-slate-400">{bt.durationMinutes} min</p>
             </div>
-            <button className="text-red-400" onClick={() => onDelete(bt.id)}>
-              Delete
-            </button>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <select
-              defaultValue={bt.categoryId}
-              className="rounded bg-slate-900 border border-slate-700 p-1 text-slate-950"
-              onChange={(e) => onUpdate(bt.id, { categoryId: e.target.value })}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <button
-              className="rounded border border-slate-600 px-2"
-              onClick={() => onUpdate(bt.id, { name: bt.name })}
-            >
-              Save
-            </button>
-          </div>
-        </div>
+            <Chip color="secondary" variant="flat">{bt.category?.name ?? "Uncategorized"}</Chip>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <Select
+                label="Category"
+                className="max-w-xs"
+                selectedKeys={[bt.categoryId]}
+                onSelectionChange={(keys) => onUpdate(bt.id, { categoryId: String(Array.from(keys)[0] ?? bt.categoryId) })}
+              >
+                {categories.map((c) => (
+                  <SelectItem key={c.id}>{c.name}</SelectItem>
+                ))}
+              </Select>
+              <Button color="danger" variant="light" onPress={() => onDelete(bt.id)}>Delete</Button>
+            </div>
+          </CardBody>
+        </Card>
       ))}
     </div>
   );
