@@ -1,5 +1,5 @@
 "use client";
-import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { CompleteBlockButton } from "../../components/CompleteBlockButton";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
