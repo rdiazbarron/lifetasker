@@ -1,21 +1,44 @@
-import { Card, Progress } from "@heroui/react";
+import { Card, Label, ProgressBar } from "@heroui/react";
 import { Progress as WeeklyProgress } from "../lib/api";
 
 export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
   const value = Math.max(0, Math.min(progress.progressPercentage, 100));
 
   return (
-    <Card className="bg-gradient-to-r from-sky-900/40 to-violet-900/30">
-      <Card.Header className="flex-col items-start gap-1">
+    <Card className="rounded-2xl border border-sky-400/20 bg-gradient-to-r from-sky-950/80 to-violet-950/70 p-6 shadow-xl shadow-black/20">
+      <div className="space-y-1">
         <p className="text-sm text-slate-300">Weekly summary</p>
-        <h2 className="text-2xl font-semibold">Weekly Level {progress.weeklyLevel}</h2>
-      </Card.Header>
-      <Card.Content className="pt-0">
-        <p className="text-slate-200">
-          {progress.totalCompletedBlocks}/{progress.totalTargetBlocks} blocks completed
+
+        <h2 className="text-2xl font-semibold text-slate-100">
+          Weekly Level {progress.weeklyLevel}
+        </h2>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-sm text-slate-200">
+          {progress.totalCompletedBlocks}/{progress.totalTargetBlocks} blocks
+          completed
         </p>
-        <Progress className="mt-4" value={value} maxValue={100} label="Target completion" showValueLabel />
-      </Card.Content>
+
+        <ProgressBar
+          aria-label="Target completion"
+          className="mt-4 w-full space-y-2"
+          value={value}
+          maxValue={100}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-sm font-medium text-slate-300">
+              Target completion
+            </Label>
+
+            <ProgressBar.Output className="text-sm font-medium text-slate-300" />
+          </div>
+
+          <ProgressBar.Track className="h-3 overflow-hidden rounded-full bg-slate-800">
+            <ProgressBar.Fill className="h-full rounded-full bg-gradient-to-r from-sky-400 to-violet-400 transition-all" />
+          </ProgressBar.Track>
+        </ProgressBar>
+      </div>
     </Card>
   );
 }

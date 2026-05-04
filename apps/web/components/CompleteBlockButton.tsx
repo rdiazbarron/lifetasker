@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Tooltip } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useState } from "react";
 
 export function CompleteBlockButton({
@@ -10,23 +10,26 @@ export function CompleteBlockButton({
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
+  async function handleComplete() {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      await onClick();
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
-    <Tooltip content="Mark this block as complete">
-      <Button
-        color="primary"
-        size="sm"
-        isLoading={isLoading}
-        onPress={async () => {
-          setIsLoading(true);
-          try {
-            await onClick();
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-      >
-        Complete
-      </Button>
-    </Tooltip>
+    <Button
+      type="button"
+      size="sm"
+      isDisabled={isLoading}
+      onPress={handleComplete}
+    >
+      {isLoading ? "Completing..." : "Complete"}
+    </Button>
   );
 }
