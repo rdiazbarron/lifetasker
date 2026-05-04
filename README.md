@@ -4,7 +4,7 @@ Monorepo for **LifeTasker**, a productivity app focused on **weekly flexible pro
 
 ## Stack
 
-- Frontend: Next.js App Router + TypeScript + TailwindCSS
+- Frontend: Next.js 15 + React 19 + Tailwind CSS 4 + HeroUI + TypeScript
 - Backend: NestJS + TypeScript
 - DB: PostgreSQL + Prisma
 
