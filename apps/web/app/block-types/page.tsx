@@ -29,9 +29,9 @@ export default function BlockTypesPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <h1 className="text-3xl font-semibold">Block types</h1>
-      {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
-      {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
+      <h1 className="text-3xl font-semibold text-slate-100">Block types</h1>
+      {error && <Card className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">{error}</Card>}
+      {status && <Card className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">{status}</Card>}
       {loading ? <div className="flex justify-center py-20"><Spinner/></div> : (
         <div className="grid gap-4 lg:grid-cols-[1fr,2fr]">
           <BlockTypeForm categories={categories} onSubmit={async (d) => { await api.createBlockType(d); setStatus("Block type created."); await load(); }} />

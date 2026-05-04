@@ -69,6 +69,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   getCategories: () => request<Category[]>("/categories"),
+  createCategory: (body: { name: string }) =>
+    request<Category>("/categories", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateCategory: (id: string, body: { name: string }) =>
+    request<Category>(`/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   getBlockTypes: () => request<BlockType[]>("/block-types"),
   createBlockType: (body: {
     name: string;
