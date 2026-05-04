@@ -1,5 +1,5 @@
 "use client";
-import { Card, CardBody, Chip, Spinner } from "@heroui/react";
+import { Card, Chip, Spinner } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { WeeklyPlanEditor } from "../../components/WeeklyPlanEditor";
 import { api, BlockType, WeeklyPlan, formatWeekRange } from "../../lib/api";
@@ -29,12 +29,12 @@ export default function WeeklyPlanPage() {
     <main className="mx-auto max-w-5xl space-y-6 p-6">
       <h1 className="text-3xl font-semibold">Weekly plan</h1>
       {plan && <Chip color="secondary" variant="flat">Current week: {formatWeekRange(plan.weekStart, plan.weekEnd)}</Chip>}
-      {error && <Card><CardBody className="text-danger">{error}</CardBody></Card>}
-      {status && <Card><CardBody className="text-success">{status}</CardBody></Card>}
+      {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
+      {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
       {loading ? <div className="flex justify-center py-20"><Spinner label="Loading weekly plan" /></div> : (
-        blockTypes.length === 0 ? <Card><CardBody className="text-slate-400">No block types yet. Create block types first, then set weekly targets.</CardBody></Card> :
+        blockTypes.length === 0 ? <Card><Card.Content className="text-slate-400">No block types yet. Create block types first, then set weekly targets.</Card.Content></Card> :
         plan ? <WeeklyPlanEditor blockTypes={blockTypes} initialItems={plan.planItems} onSave={async (items) => { await api.updateWeeklyPlanItems(plan.id, { items }); setStatus("Weekly targets saved."); await load(); }} /> :
-        <Card><CardBody className="text-slate-400">No current weekly plan available.</CardBody></Card>
+        <Card><Card.Content className="text-slate-400">No current weekly plan available.</Card.Content></Card>
       )}
     </main>
   );

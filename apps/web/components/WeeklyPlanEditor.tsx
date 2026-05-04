@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardBody, CardFooter, CardHeader, Divider, Input } from "@heroui/react";
+import { Button, Card, Separator, Input } from "@heroui/react";
 import { useState } from "react";
 import { BlockType, WeeklyPlanItem } from "../lib/api";
 
@@ -40,12 +40,12 @@ export function WeeklyPlanEditor({
 
   return (
     <Card>
-      <CardHeader className="flex-col items-start">
+      <Card.Header className="flex-col items-start">
         <h2 className="font-semibold">Weekly targets</h2>
         <p className="text-xs text-slate-400">Set flexible total counts for this week.</p>
-      </CardHeader>
-      <Divider />
-      <CardBody className="space-y-3">
+      </Card.Header>
+      <Separator />
+      <Card.Content className="space-y-3">
         {blockTypes.map((bt) => (
           <div key={bt.id} className="flex items-center justify-between gap-4">
             <span>{bt.name}</span>
@@ -59,10 +59,10 @@ export function WeeklyPlanEditor({
           </div>
         ))}
         {error && <p className="text-sm text-danger">{error}</p>}
-      </CardBody>
-      <CardFooter>
+      </Card.Content>
+      <Card.Footer>
         <Button color="primary" onPress={save} isLoading={isSaving}>Save weekly targets</Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }

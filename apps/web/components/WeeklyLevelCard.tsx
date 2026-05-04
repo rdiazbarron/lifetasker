@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, Progress } from "@heroui/react";
+import { Card, Progress } from "@heroui/react";
 import { Progress as WeeklyProgress } from "../lib/api";
 
 export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
@@ -6,16 +6,16 @@ export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
 
   return (
     <Card className="bg-gradient-to-r from-sky-900/40 to-violet-900/30">
-      <CardHeader className="flex-col items-start gap-1">
+      <Card.Header className="flex-col items-start gap-1">
         <p className="text-sm text-slate-300">Weekly summary</p>
         <h2 className="text-2xl font-semibold">Weekly Level {progress.weeklyLevel}</h2>
-      </CardHeader>
-      <CardBody className="pt-0">
+      </Card.Header>
+      <Card.Content className="pt-0">
         <p className="text-slate-200">
           {progress.totalCompletedBlocks}/{progress.totalTargetBlocks} blocks completed
         </p>
         <Progress className="mt-4" value={value} maxValue={100} label="Target completion" showValueLabel />
-      </CardBody>
+      </Card.Content>
     </Card>
   );
 }
