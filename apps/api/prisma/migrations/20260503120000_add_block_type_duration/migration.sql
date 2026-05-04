@@ -1,2 +1,3 @@
+-- Keep durationMinutes required but remove default to match Prisma schema.
 ALTER TABLE "BlockType"
-ADD COLUMN "durationMinutes" INTEGER NOT NULL DEFAULT 30;
+ALTER COLUMN "durationMinutes" DROP DEFAULT;
