@@ -12,6 +12,16 @@ import {
 import { FormEvent, useState } from "react";
 import { Category } from "../lib/api";
 
+function normalizeSelectionKey(key: unknown): string {
+  if (typeof key === "string" || typeof key === "number") return String(key);
+  if (key && typeof key === "object" && "currentKey" in (key as Record<string, unknown>)) {
+    const currentKey = (key as { currentKey?: string | number | null }).currentKey;
+    return currentKey ? String(currentKey) : "";
+  }
+  return "";
+}
+
+
 export function BlockTypeForm({
   categories,
   onSubmit,
@@ -126,7 +136,7 @@ export function BlockTypeForm({
           <Select
             selectedKey={categoryId || null}
             onSelectionChange={(key) => {
-              setCategoryId(key ? String(key) : "");
+              setCategoryId(normalizeSelectionKey(key));
             }}
             className="relative"
           >

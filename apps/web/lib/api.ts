@@ -29,6 +29,12 @@ export type WeeklyPlan = {
   planItems: WeeklyPlanItem[];
 };
 
+export type BlockInstance = {
+  id: string;
+  blockTypeId: string;
+  completedAt: string;
+};
+
 export type Progress = {
   totalTargetBlocks: number;
   totalCompletedBlocks: number;
@@ -112,6 +118,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  undoLastCompletedBlock: (blockTypeId: string) =>
+    request<BlockInstance>(`/block-instances/complete/${blockTypeId}`, { method: "DELETE" }),
+  getCurrentWeekCompletions: () => request<BlockInstance[]>("/block-instances/current-week"),
   getCurrentProgress: () => request<Progress>("/progress/current-week"),
 };
 
