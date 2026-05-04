@@ -1,13 +1,13 @@
-import { Card, Chip, Progress } from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Progress } from "@heroui/react";
 import { Progress as WeeklyProgress } from "../lib/api";
 
 export function ProgressByCategory({ progress }: { progress: WeeklyProgress }) {
   return (
     <Card>
-      <Card.Header>
+      <CardHeader>
         <h3 className="font-semibold">Progress by category</h3>
-      </Card.Header>
-      <Card.Content className="pt-0">
+      </CardHeader>
+      <CardBody className="pt-0">
         {progress.progressByCategory.length === 0 ? (
           <p className="text-slate-400">No category targets yet for this week.</p>
         ) : (
@@ -26,7 +26,7 @@ export function ProgressByCategory({ progress }: { progress: WeeklyProgress }) {
             })}
           </ul>
         )}
-      </Card.Content>
+      </CardBody>
     </Card>
   );
 }

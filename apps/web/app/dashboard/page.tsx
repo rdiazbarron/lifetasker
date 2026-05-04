@@ -1,5 +1,5 @@
 "use client";
-import { Card, Chip, Separator, Spinner } from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Divider, Spinner } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { CompleteBlockButton } from "../../components/CompleteBlockButton";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
@@ -37,8 +37,8 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-semibold">Dashboard</h1>
         <Chip variant="flat" color="primary">Weekly-flex progress overview</Chip>
       </div>
-      {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
-      {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
+      {error && <Card><CardBody className="text-danger">{error}</CardBody></Card>}
+      {status && <Card><CardBody className="text-success">{status}</CardBody></Card>}
       {loading ? <div className="flex justify-center py-20"><Spinner label="Loading dashboard" /></div> : <>
         <WeeklyLevelCard progress={progress} />
         <div className="grid gap-4 md:grid-cols-2">
@@ -46,9 +46,9 @@ export default function DashboardPage() {
           <ProgressByBlockType progress={progress} />
         </div>
         <Card>
-          <Card.Header><h3 className="font-semibold">Quick complete</h3></Card.Header>
-          <Separator />
-          <Card.Content>
+          <CardHeader><h3 className="font-semibold">Quick complete</h3></CardHeader>
+          <Divider />
+          <CardBody>
             <p className="mb-4 text-sm text-slate-400">Log finished blocks and instantly refresh weekly progress.</p>
             {blockTypes.length === 0 ? <p className="text-slate-400">No block types yet. Create one in Block Types first.</p> : (
               <ul className="space-y-2">
@@ -62,7 +62,7 @@ export default function DashboardPage() {
                 ))}
               </ul>
             )}
-          </Card.Content>
+          </CardBody>
         </Card>
       </>}
     </main>

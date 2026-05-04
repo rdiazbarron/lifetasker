@@ -1,10 +1,29 @@
 "use client";
 
-import { Button, Card, Input } from "@heroui/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Input,
+  Select,
+  SelectItem,
+} from "@heroui/react";
 import { FormEvent, useState } from "react";
 import { Category } from "../lib/api";
 
-export function BlockTypeForm({ categories, onSubmit }: { categories: Category[]; onSubmit: (data: { name: string; durationMinutes: number; categoryId: string; description?: string; }) => Promise<void>; }) {
+export function BlockTypeForm({
+  categories,
+  onSubmit,
+}: {
+  categories: Category[];
+  onSubmit: (data: {
+    name: string;
+    durationMinutes: number;
+    categoryId: string;
+    description?: string;
+  }) => Promise<void>;
+}) {
   const [name, setName] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [categoryId, setCategoryId] = useState("");
@@ -18,9 +37,52 @@ export function BlockTypeForm({ categories, onSubmit }: { categories: Category[]
     if (!name.trim()) return setError("Block type name is required.");
     if (!categoryId) return setError("Category is required.");
     setIsSaving(true);
-    try { await onSubmit({ name: name.trim(), durationMinutes, categoryId, description: description.trim() || undefined }); setName(""); setDescription(""); }
-    finally { setIsSaving(false); }
+    try {
+      await onSubmit({
+        name: name.trim(),
+        durationMinutes,
+        categoryId,
+        description: description.trim() || undefined,
+      });
+      setName("");
+      setDescription("");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  return <Card><Card.Header><h2 className="text-lg font-semibold">Create block type</h2></Card.Header><Card.Content><form onSubmit={handleSubmit} className="space-y-4"><Input label="Name" value={name} onValueChange={setName} isRequired /><Input type="number" min={1} label="Duration (minutes)" value={String(durationMinutes)} onValueChange={(v)=>setDurationMinutes(Number(v)||1)} /><label className="text-sm">Category<select className="mt-1 w-full rounded-md border border-default-200 bg-transparent p-2" value={categoryId} onChange={(e)=>setCategoryId(e.target.value)}><option value="">Select category</option>{categories.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><Input label="Description" value={description} onValueChange={setDescription} />{error && <p className="text-sm text-danger">{error}</p>}<Button color="primary" type="submit" isLoading={isSaving}>Save block type</Button></form></Card.Content></Card>;
+  return (
+    <Card>
+      <CardHeader><h2 className="text-lg font-semibold">Create block type</h2></CardHeader>
+      <CardBody>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="Name" placeholder="Deep Work" value={name} onValueChange={setName} isRequired />
+          <Input
+            type="number"
+            min={1}
+            label="Duration (minutes)"
+            value={String(durationMinutes)}
+            onValueChange={(value) => setDurationMinutes(Number(value) || 1)}
+          />
+          <Select
+            label="Category"
+            selectedKeys={categoryId ? [categoryId] : []}
+            onSelectionChange={(keys) => setCategoryId(String(Array.from(keys)[0] ?? ""))}
+          >
+            {categories.map((c) => (
+              <SelectItem key={c.id}>{c.name}</SelectItem>
+            ))}
+          </Select>
+          <Input
+            label="Description"
+            placeholder="Optional note"
+            value={description}
+            onValueChange={setDescription}
+          />
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <Button color="primary" type="submit" isLoading={isSaving}>Save block type</Button>
+        </form>
+      </CardBody>
+    </Card>
+  );
 }
