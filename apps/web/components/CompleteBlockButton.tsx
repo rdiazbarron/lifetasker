@@ -11,7 +11,7 @@ export function CompleteBlockButton({
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <Tooltip content="Log one completed block for this type">
+    <Tooltip>
       <Button
         color="primary"
         size="sm"

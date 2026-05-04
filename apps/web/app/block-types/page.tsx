@@ -32,7 +32,7 @@ export default function BlockTypesPage() {
       <h1 className="text-3xl font-semibold">Block types</h1>
       {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
       {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
-      {loading ? <div className="flex justify-center py-20"><Spinner label="Loading block types" /></div> : (
+      {loading ? <div className="flex justify-center py-20"><Spinner/></div> : (
         <div className="grid gap-4 lg:grid-cols-[1fr,2fr]">
           <BlockTypeForm categories={categories} onSubmit={async (d) => { await api.createBlockType(d); setStatus("Block type created."); await load(); }} />
           <BlockTypeList

@@ -35,11 +35,11 @@ export default function DashboardPage() {
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-end justify-between">
         <h1 className="text-3xl font-semibold">Dashboard</h1>
-        <Chip variant="flat" color="primary">Weekly-flex progress overview</Chip>
+        <Chip>Weekly-flex progress overview</Chip>
       </div>
       {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
       {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
-      {loading ? <div className="flex justify-center py-20"><Spinner label="Loading dashboard" /></div> : <>
+      {loading ? <div className="flex justify-center py-20"><Spinner/></div> : <>
         <WeeklyLevelCard progress={progress} />
         <div className="grid gap-4 md:grid-cols-2">
           <ProgressByCategory progress={progress} />
