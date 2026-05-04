@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { AppHeader } from "../components/AppHeader";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -14,8 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
-        <Providers>{children}</Providers>
+      <body className="min-h-screen bg-slate-950 text-slate-100">
+        <Providers>
+          <AppHeader />
+          {children}
+        </Providers>
       </body>
     </html>
   );

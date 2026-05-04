@@ -87,6 +87,7 @@ export function BlockTypeList({
                       {categories.map((category) => (
                         <ListBox.Item
                           key={category.id}
+                          id={category.id}
                           textValue={category.name}
                           className="cursor-pointer rounded-lg px-3 py-2 text-sm text-slate-100 outline-none transition hover:bg-slate-800 focus:bg-slate-800"
                         >
