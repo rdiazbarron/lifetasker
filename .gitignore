@@ -56,3 +56,9 @@ Thumbs.db
 .npmrc
 .pnpm-store/
 **/.pnpm-store/
+# Linter
+.eslintrc.json
+
+# Lockfiles de otros gestores (si solo usas npm)
+pnpm-lock.yaml
+yarn.lock
