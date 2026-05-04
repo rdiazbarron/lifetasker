@@ -88,8 +88,7 @@ export function BlockTypeForm({
       setIsSaving(false);
     }
   }
-
-  const selectedCategory = categories.find((c) => c.id === categoryId);
+const selectedCategory = categories.find((c) => String(c.id) === categoryId);
 
   return (
     <Card className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20 backdrop-blur">
@@ -155,8 +154,7 @@ export function BlockTypeForm({
             <Select.Popover className="z-50 mt-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-xl">
               <ListBox className="max-h-60 overflow-auto outline-none">
                 {categories.map((category) => (
-                  <ListBox.Item
-                    key={category.id}
+                  <ListBox.Item key={category.id} id={category.id}
                     textValue={category.name}
                     className="cursor-pointer rounded-lg px-3 py-2 text-sm text-slate-100 outline-none transition hover:bg-slate-800 focus:bg-slate-800"
                   >
