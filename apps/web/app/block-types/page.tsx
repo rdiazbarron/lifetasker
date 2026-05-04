@@ -1,5 +1,5 @@
 "use client";
-import { Card, CardBody, Spinner } from "@heroui/react";
+import { Card, Spinner } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { BlockTypeForm } from "../../components/BlockTypeForm";
 import { BlockTypeList } from "../../components/BlockTypeList";
@@ -30,8 +30,8 @@ export default function BlockTypesPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <h1 className="text-3xl font-semibold">Block types</h1>
-      {error && <Card><CardBody className="text-danger">{error}</CardBody></Card>}
-      {status && <Card><CardBody className="text-success">{status}</CardBody></Card>}
+      {error && <Card><Card.Content className="text-danger">{error}</Card.Content></Card>}
+      {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
       {loading ? <div className="flex justify-center py-20"><Spinner label="Loading block types" /></div> : (
         <div className="grid gap-4 lg:grid-cols-[1fr,2fr]">
           <BlockTypeForm categories={categories} onSubmit={async (d) => { await api.createBlockType(d); setStatus("Block type created."); await load(); }} />
