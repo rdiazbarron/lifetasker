@@ -1,29 +1,19 @@
 "use client";
 import { Card, Chip, Spinner } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { WeeklyPlanEditor } from "../../components/WeeklyPlanEditor";
-import { api, BlockType, WeeklyPlan, formatWeekRange } from "../../lib/api";
+import { api, formatWeekRange } from "../../lib/api";
+import { useQuery } from "../../lib/useQuery";
 
 export default function WeeklyPlanPage() {
-  const [plan, setPlan] = useState<WeeklyPlan | null>(null);
-  const [blockTypes, setBlockTypes] = useState<BlockType[]>([]);
-  const [error, setError] = useState("");
+  const { data, loading, error, reload } = useQuery(() =>
+    Promise.all([api.getCurrentWeeklyPlan(), api.getBlockTypes()]).then(
+      ([plan, blockTypes]) => ({ plan, blockTypes }),
+    ),
+  );
+  const plan = data?.plan ?? null;
+  const blockTypes = data?.blockTypes ?? [];
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    try {
-      setError("");
-      const [p, b] = await Promise.all([api.getCurrentWeeklyPlan(), api.getBlockTypes()]);
-      setPlan(p);
-      setBlockTypes(b);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => { load(); }, []);
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
@@ -33,7 +23,7 @@ export default function WeeklyPlanPage() {
       {status && <Card><Card.Content className="text-success">{status}</Card.Content></Card>}
       {loading ? <div className="flex justify-center py-20"><Spinner label="Loading weekly plan" /></div> : (
         blockTypes.length === 0 ? <Card><Card.Content className="text-slate-400">No block types yet. Create block types first, then set weekly targets.</Card.Content></Card> :
-        plan ? <WeeklyPlanEditor blockTypes={blockTypes} initialItems={plan.planItems} onSave={async (items) => { await api.updateWeeklyPlanItems(plan.id, { items }); setStatus("Weekly targets saved."); await load(); }} /> :
+        plan ? <WeeklyPlanEditor blockTypes={blockTypes} initialItems={plan.planItems} onSave={async (items) => { await api.updateWeeklyPlanItems(plan.id, { items }); setStatus("Weekly targets saved."); await reload(); }} /> :
         <Card><Card.Content className="text-slate-400">No current weekly plan available.</Card.Content></Card>
       )}
     </main>

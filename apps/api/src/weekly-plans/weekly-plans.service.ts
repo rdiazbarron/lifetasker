@@ -4,8 +4,9 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "../common/demo-user";
-import { getWeekBounds } from "../common/week";
+import { UserContextService } from "../common/user-context.service";
+import { WeekService } from "../common/week.service";
+import { PlanBootstrapper } from "./plan-bootstrapper.service";
 import {
   CreateWeeklyPlanDto,
   UpdateWeeklyPlanItemsDto,
@@ -13,21 +14,18 @@ import {
 
 @Injectable()
 export class WeeklyPlansService {
-  constructor(private prisma: PrismaService) {}
-
-  private async userId() {
-    return (
-      await this.prisma.user.upsert({
-        where: { email: DEMO_USER_EMAIL },
-        update: {},
-        create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME },
-      })
-    ).id;
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly userContext: UserContextService,
+    private readonly week: WeekService,
+    private readonly planBootstrapper: PlanBootstrapper,
+  ) {}
 
   async create(dto: CreateWeeklyPlanDto) {
-    const userId = await this.userId();
-    const { weekStart, weekEnd } = getWeekBounds(new Date(dto.weekStartDate));
+    const userId = await this.userContext.userId();
+    const { weekStart, weekEnd } = this.week.boundsFor(
+      new Date(dto.weekStartDate),
+    );
     const existing = await this.prisma.weeklyPlan.findUnique({
       where: { userId_weekStart: { userId, weekStart } },
     });
@@ -41,40 +39,12 @@ export class WeeklyPlansService {
   }
 
   async getCurrent() {
-    const userId = await this.userId();
-    const now = getWeekBounds(new Date());
-
-    const existingPlan = await this.prisma.weeklyPlan.findUnique({
-      where: { userId_weekStart: { userId, weekStart: now.weekStart } },
-      include: { planItems: true },
-    });
-    if (existingPlan) return existingPlan;
-
-    const previousPlan = await this.prisma.weeklyPlan.findFirst({
-      where: { userId, weekStart: { lt: now.weekStart } },
-      include: { planItems: true },
-      orderBy: { weekStart: "desc" },
-    });
-
-    return this.prisma.weeklyPlan.create({
-      data: {
-        userId,
-        weekStart: now.weekStart,
-        weekEnd: now.weekEnd,
-        planItems: {
-          create:
-            previousPlan?.planItems.map((item) => ({
-              blockTypeId: item.blockTypeId,
-              targetCount: item.targetCount,
-            })) ?? [],
-        },
-      },
-      include: { planItems: true },
-    });
+    const userId = await this.userContext.userId();
+    return this.planBootstrapper.ensureCurrentPlan(userId);
   }
 
   async findOne(id: string) {
-    const userId = await this.userId();
+    const userId = await this.userContext.userId();
     const p = await this.prisma.weeklyPlan.findFirst({
       where: { id, userId },
       include: { planItems: true },

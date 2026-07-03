@@ -6,23 +6,17 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateBlockTypeDto } from "./dto/create-block-type.dto";
 import { UpdateBlockTypeDto } from "./dto/update-block-type.dto";
-import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "../common/demo-user";
+import { UserContextService } from "../common/user-context.service";
 
 @Injectable()
 export class BlockTypesService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private async demoUserId() {
-    const u = await this.prisma.user.upsert({
-      where: { email: DEMO_USER_EMAIL },
-      update: {},
-      create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME },
-    });
-    return u.id;
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly userContext: UserContextService,
+  ) {}
 
   async create(dto: CreateBlockTypeDto) {
-    const userId = await this.demoUserId();
+    const userId = await this.userContext.userId();
     try {
       return await this.prisma.blockType.create({ data: { ...dto, userId } });
     } catch {
@@ -33,7 +27,7 @@ export class BlockTypesService {
   }
 
   async findAll() {
-    const userId = await this.demoUserId();
+    const userId = await this.userContext.userId();
     return this.prisma.blockType.findMany({
       where: { userId },
       include: { category: true },
@@ -42,7 +36,7 @@ export class BlockTypesService {
   }
 
   async findOne(id: string) {
-    const userId = await this.demoUserId();
+    const userId = await this.userContext.userId();
     const bt = await this.prisma.blockType.findFirst({
       where: { id, userId },
       include: { category: true },

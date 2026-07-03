@@ -1,28 +1,22 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "../common/demo-user";
-import { getWeekBounds } from "../common/week";
+import { UserContextService } from "../common/user-context.service";
+import { WeekService } from "../common/week.service";
 import { CompleteBlockDto } from "./dto/complete-block.dto";
-import { WeeklyPlansService } from "../weekly-plans/weekly-plans.service";
+import { PlanBootstrapper } from "../weekly-plans/plan-bootstrapper.service";
 
 @Injectable()
 export class BlockInstancesService {
   constructor(
-    private prisma: PrismaService,
-    private weeklyPlansService: WeeklyPlansService,
+    private readonly prisma: PrismaService,
+    private readonly userContext: UserContextService,
+    private readonly week: WeekService,
+    private readonly planBootstrapper: PlanBootstrapper,
   ) {}
-  private async userId() {
-    return (
-      await this.prisma.user.upsert({
-        where: { email: DEMO_USER_EMAIL },
-        update: {},
-        create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME },
-      })
-    ).id;
-  }
+
   async complete(dto: CompleteBlockDto) {
-    await this.weeklyPlansService.getCurrent();
-    const userId = await this.userId();
+    const userId = await this.userContext.userId();
+    await this.planBootstrapper.ensureCurrentPlan(userId);
     return this.prisma.blockInstance.create({
       data: {
         userId,
@@ -35,8 +29,8 @@ export class BlockInstancesService {
   }
 
   async undoLast(blockTypeId: string) {
-    const userId = await this.userId();
-    const { weekStart, weekEnd } = getWeekBounds(new Date());
+    const userId = await this.userContext.userId();
+    const { weekStart, weekEnd } = this.week.currentBounds();
 
     const latest = await this.prisma.blockInstance.findFirst({
       where: {
@@ -48,15 +42,17 @@ export class BlockInstancesService {
     });
 
     if (!latest) {
-      throw new NotFoundException("No completion found this week for this block type.");
+      throw new NotFoundException(
+        "No completion found this week for this block type.",
+      );
     }
 
     return this.prisma.blockInstance.delete({ where: { id: latest.id } });
   }
 
   async currentWeek() {
-    const userId = await this.userId();
-    const { weekStart, weekEnd } = getWeekBounds(new Date());
+    const userId = await this.userContext.userId();
+    const { weekStart, weekEnd } = this.week.currentBounds();
     return this.prisma.blockInstance.findMany({
       where: { userId, completedAt: { gte: weekStart, lte: weekEnd } },
       include: { blockType: { include: { category: true } } },

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — LifeTasker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .module-box { border: 2px solid #334155; border-radius: 6px; padding: 6px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-family: monospace; background: white; display: inline-block; }
+      .module-box.deep-box { background: #0f172a; color: #e2e8f0; border-color: #0f172a; }
+      .module-box.leak-box { border-color: #dc2626; color: #dc2626; }
+      .arrow { stroke: #64748b; stroke-width: 1.5; fill: none; marker-end: url(#arr); }
+      .arrow-leak { stroke: #dc2626; stroke-width: 2; fill: none; marker-end: url(#arr-leak); }
+      .arrow-ok { stroke: #10b981; stroke-width: 2; fill: none; marker-end: url(#arr-ok); }
+      .seam-line { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <!-- HEADER -->
+      <header class="border-b border-slate-200 pb-8">
+        <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">Architecture Review</p>
+        <h1 class="text-3xl font-serif font-semibold text-slate-900">LifeTasker</h1>
+        <p class="text-slate-500 mt-1 text-sm">2026-06-21 &mdash; 5 candidates</p>
+
+        <div class="mt-6 flex flex-wrap gap-6 text-xs text-slate-500">
+          <span class="flex items-center gap-2">
+            <span class="inline-block w-6 h-4 border-2 border-slate-500 rounded-sm bg-white"></span>
+            module
+          </span>
+          <span class="flex items-center gap-2">
+            <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/></svg>
+            seam
+          </span>
+          <span class="flex items-center gap-2">
+            <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#dc2626" stroke-width="2"/></svg>
+            leakage
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="inline-block w-6 h-4 rounded-sm" style="background:#0f172a;"></span>
+            deep module
+          </span>
+        </div>
+      </header>
+
+      <!-- CANDIDATES -->
+      <section id="candidates" class="space-y-14">
+
+        <!-- ═══════════════════════════════════════════════════════════
+             CANDIDATE 1 — User context seam leak
+        ════════════════════════════════════════════════════════════════ -->
+        <article id="c1" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="px-8 pt-7 pb-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">Strong</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">in-process</span>
+            </div>
+            <h2 class="text-xl font-serif font-semibold text-slate-900">Deepen the user-context seam</h2>
+            <div class="mt-2 font-mono text-xs text-slate-400 space-y-0.5">
+              <div>apps/api/src/block-types/block-types.service.ts</div>
+              <div>apps/api/src/weekly-plans/weekly-plans.service.ts</div>
+              <div>apps/api/src/block-instances/block-instances.service.ts</div>
+              <div>apps/api/src/progress/progress.service.ts</div>
+              <div>apps/api/src/common/demo-user.ts</div>
+            </div>
+          </div>
+
+          <!-- BEFORE / AFTER DIAGRAMS -->
+          <div class="grid grid-cols-2 divide-x divide-slate-100">
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">Before</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+flowchart TD
+  BT["BlockTypesService"] -->|"userId() → upsert"| DB1[("DB")]
+  WP["WeeklyPlansService"] -->|"userId() → upsert"| DB2[("DB")]
+  BI["BlockInstancesService"] -->|"userId() → upsert"| DB3[("DB")]
+  PR["ProgressService"] -->|"userId() → upsert"| DB4[("DB")]
+
+  classDef svc fill:#f8fafc,stroke:#dc2626,stroke-width:2px;
+  classDef db fill:#fef2f2,stroke:#dc2626;
+  class BT,WP,BI,PR svc
+  class DB1,DB2,DB3,DB4 db
+                </pre>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">4 identical <code>userId()</code> methods. Every read hits the DB.</p>
+            </div>
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">After</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+flowchart TD
+  REQ["Request"] -->|"NestJS guard"| UC["UserContextService"]
+  UC -->|"once per request"| DB[("DB")]
+  UC -.seam.-> BT["BlockTypesService"]
+  UC -.seam.-> WP["WeeklyPlansService"]
+  UC -.seam.-> BI["BlockInstancesService"]
+  UC -.seam.-> PR["ProgressService"]
+
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#e2e8f0;
+  classDef svc fill:#f8fafc,stroke:#334155;
+  classDef db fill:#f0fdf4,stroke:#10b981;
+  class UC deep
+  class BT,WP,BI,PR svc
+  class DB db
+                </pre>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">One module. One DB call. Four services inject the resolved id.</p>
+            </div>
+          </div>
+
+          <div class="px-8 py-5 border-t border-slate-100 space-y-3">
+            <p class="text-sm text-slate-700"><strong>Problem.</strong> The <code>userId()</code> method is copied verbatim into four modules; every read operation triggers a DB upsert &mdash; the seam is leaking implementation across every module boundary.</p>
+            <p class="text-sm text-slate-700"><strong>Solution.</strong> Extract a <code>UserContextModule</code> with one interface; inject the resolved <code>userId</code> via NestJS request scope rather than resolving it in each service.</p>
+            <ul class="text-xs text-slate-600 space-y-1 list-none">
+              <li>&#10003; <strong>locality</strong> &mdash; user-resolution bugs in one module</li>
+              <li>&#10003; <strong>leverage</strong> &mdash; one DB call serves four services per request</li>
+              <li>&#10003; interface shrinks on all four services</li>
+              <li>&#10003; enables real auth: swap guard, nothing else changes</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             CANDIDATE 2 — Progress calculation god method
+        ════════════════════════════════════════════════════════════════ -->
+        <article id="c2" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="px-8 pt-7 pb-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">Strong</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">in-process</span>
+            </div>
+            <h2 class="text-xl font-serif font-semibold text-slate-900">Collapse the progress calculation into a deep module</h2>
+            <div class="mt-2 font-mono text-xs text-slate-400">
+              <div>apps/api/src/progress/progress.service.ts</div>
+            </div>
+          </div>
+
+          <!-- Cross-section diagram -->
+          <div class="grid grid-cols-2 divide-x divide-slate-100">
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">Before &mdash; shallow (interface ≈ implementation)</p>
+              <!-- Mass diagram: wide interface, wide implementation -->
+              <div class="space-y-1.5">
+                <div class="h-8 bg-indigo-100 border border-indigo-300 rounded flex items-center px-3 text-xs font-mono text-indigo-700">interface: currentWeek()</div>
+                <div class="h-8 bg-red-50 border border-red-200 rounded flex items-center px-3 text-xs font-mono text-red-600">fetch plan + completions</div>
+                <div class="h-8 bg-red-50 border border-red-200 rounded flex items-center px-3 text-xs font-mono text-red-600">aggregate by blockType</div>
+                <div class="h-8 bg-red-50 border border-red-200 rounded flex items-center px-3 text-xs font-mono text-red-600">aggregate by category</div>
+                <div class="h-8 bg-red-50 border border-red-200 rounded flex items-center px-3 text-xs font-mono text-red-600">level: if 15 / if 9 / if 4</div>
+                <div class="h-8 bg-red-50 border border-red-200 rounded flex items-center px-3 text-xs font-mono text-red-600">percentage = comp / target</div>
+                <p class="text-xs text-slate-400 mt-2">Implementation leaks through the interface. 80 LoC, untestable in parts.</p>
+              </div>
+            </div>
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">After &mdash; deep module</p>
+              <div class="space-y-1.5">
+                <div class="h-8 bg-indigo-100 border border-indigo-300 rounded flex items-center px-3 text-xs font-mono text-indigo-700">interface: currentWeek(userId)</div>
+                <div class="rounded-lg border-2 border-slate-800 bg-slate-900 text-slate-300 px-3 py-3 space-y-1 text-xs font-mono">
+                  <div class="text-slate-500">//&nbsp;internal</div>
+                  <div class="opacity-60">fetchRaw(userId)</div>
+                  <div class="opacity-60">aggregateByType(rows)</div>
+                  <div class="opacity-60">aggregateByCategory(rows)</div>
+                  <div class="opacity-60">LevelCalculator.compute(n)</div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Thin interface. Fat implementation. Each piece testable in isolation.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-5 border-t border-slate-100 space-y-3">
+            <p class="text-sm text-slate-700"><strong>Problem.</strong> Level thresholds, category aggregation, and percentage calculation are all inlined in one 80-line method &mdash; the module is shallow, its interface nearly matches the full implementation.</p>
+            <p class="text-sm text-slate-700"><strong>Solution.</strong> Extract <code>LevelCalculator</code> as a private utility and split aggregation into named private methods; the public interface stays exactly one method.</p>
+            <ul class="text-xs text-slate-600 space-y-1 list-none">
+              <li>&#10003; <strong>locality</strong> &mdash; level bugs isolated to <code>LevelCalculator</code></li>
+              <li>&#10003; <strong>leverage</strong> &mdash; formula testable with plain inputs, no DB</li>
+              <li>&#10003; magic numbers become named constants</li>
+              <li>&#10003; category aggregation independently verifiable</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             CANDIDATE 3 — Frontend data-fetching has no interface
+        ════════════════════════════════════════════════════════════════ -->
+        <article id="c3" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="px-8 pt-7 pb-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">Strong</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">in-process</span>
+            </div>
+            <h2 class="text-xl font-serif font-semibold text-slate-900">Give frontend data-fetching one interface</h2>
+            <div class="mt-2 font-mono text-xs text-slate-400 space-y-0.5">
+              <div>apps/web/app/dashboard/page.tsx</div>
+              <div>apps/web/app/block-types/page.tsx</div>
+              <div>apps/web/app/categories/page.tsx</div>
+              <div>apps/web/app/weekly-plan/page.tsx</div>
+            </div>
+          </div>
+
+          <!-- Call-graph collapse diagram -->
+          <div class="grid grid-cols-2 divide-x divide-slate-100">
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">Before &mdash; 4× shallow copies</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+flowchart LR
+  D["dashboard/page"] -->|"useState×3\nuseEffect\ntry/catch"| API1["api.*"]
+  BT["block-types/page"] -->|"useState×3\nuseEffect\ntry/catch"| API2["api.*"]
+  C["categories/page"] -->|"useState×3\nuseEffect\ntry/catch"| API3["api.*"]
+  WP["weekly-plan/page"] -->|"useState×3\nuseEffect\ntry/catch"| API4["api.*"]
+
+  classDef pg fill:#fef2f2,stroke:#dc2626,stroke-width:2px;
+  class D,BT,C,WP pg
+                </pre>
+              </div>
+            </div>
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">After &mdash; one seam</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+flowchart LR
+  D["dashboard/page"] -.-> UQ
+  BT["block-types/page"] -.-> UQ
+  C["categories/page"] -.-> UQ
+  WP["weekly-plan/page"] -.-> UQ
+
+  UQ["useQuery(fetcher)"]:::deep -->|"one interface"| API["api.*"]
+
+  classDef pg fill:#f8fafc,stroke:#334155;
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#e2e8f0;
+  class D,BT,C,WP pg
+  class UQ deep
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-5 border-t border-slate-100 space-y-3">
+            <p class="text-sm text-slate-700"><strong>Problem.</strong> Each page reimplements the same <code>useState × 3 / useEffect / try-catch</code> state machine &mdash; four shallow copies of the same interface with no seam between them.</p>
+            <p class="text-sm text-slate-700"><strong>Solution.</strong> Extract a <code>useQuery(fetcher)</code> hook that owns the state machine; pages declare <em>what</em> to fetch, not <em>how</em>.</p>
+            <ul class="text-xs text-slate-600 space-y-1 list-none">
+              <li>&#10003; <strong>locality</strong> &mdash; loading/error bugs in one hook</li>
+              <li>&#10003; <strong>leverage</strong> &mdash; 4 pages share one interface</li>
+              <li>&#10003; interface shrinks on every page component</li>
+              <li>&#10003; caching addable at one seam, not four</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             CANDIDATE 4 — BlockInstances → WeeklyPlans side-effect coupling
+        ════════════════════════════════════════════════════════════════ -->
+        <article id="c4" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="px-8 pt-7 pb-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">Worth exploring</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">in-process</span>
+            </div>
+            <h2 class="text-xl font-serif font-semibold text-slate-900">Sever the BlockInstances→WeeklyPlans coupling by side effect</h2>
+            <div class="mt-2 font-mono text-xs text-slate-400 space-y-0.5">
+              <div>apps/api/src/block-instances/block-instances.service.ts</div>
+              <div>apps/api/src/weekly-plans/weekly-plans.service.ts</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 divide-x divide-slate-100">
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">Before &mdash; hidden coupling</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+sequenceDiagram
+  participant C as Controller
+  participant BI as BlockInstancesService
+  participant WP as WeeklyPlansService
+  participant DB as Database
+
+  C->>BI: complete(dto)
+  BI->>WP: getCurrent()
+  Note over BI,WP: side effect only — return value discarded
+  WP->>DB: upsert plan
+  WP-->>BI: plan (ignored)
+  BI->>DB: create block instance
+  BI-->>C: result
+                </pre>
+              </div>
+            </div>
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">After &mdash; explicit seam</p>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <pre class="mermaid text-xs">
+sequenceDiagram
+  participant C as Controller
+  participant BI as BlockInstancesService
+  participant PS as PlanBootstrapper
+  participant DB as Database
+
+  C->>BI: complete(dto)
+  BI->>PS: ensurePlanExists(userId, week)
+  PS->>DB: upsert plan
+  PS-->>BI: void
+  BI->>DB: create block instance
+  BI-->>C: result
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-5 border-t border-slate-100 space-y-3">
+            <p class="text-sm text-slate-700"><strong>Problem.</strong> <code>BlockInstancesService.complete()</code> calls <code>WeeklyPlansService.getCurrent()</code> purely for its side effect — the return value is discarded, making the seam invisible and untestable.</p>
+            <p class="text-sm text-slate-700"><strong>Solution.</strong> Extract plan bootstrapping to a <code>PlanBootstrapper</code> with a narrow <code>ensurePlanExists(userId, week)</code> interface; the intent is explicit at the call site.</p>
+            <ul class="text-xs text-slate-600 space-y-1 list-none">
+              <li>&#10003; <strong>locality</strong> &mdash; plan auto-creation in one module</li>
+              <li>&#10003; seam is explicit and testable in isolation</li>
+              <li>&#10003; <code>WeeklyPlansModule</code> no longer exported to <code>BlockInstancesModule</code></li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             CANDIDATE 5 — Week boundary scattered across three modules
+        ════════════════════════════════════════════════════════════════ -->
+        <article id="c5" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="px-8 pt-7 pb-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide">Worth exploring</span>
+              <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">in-process</span>
+            </div>
+            <h2 class="text-xl font-serif font-semibold text-slate-900">Deepen the week-boundary module</h2>
+            <div class="mt-2 font-mono text-xs text-slate-400 space-y-0.5">
+              <div>apps/api/src/common/week.ts</div>
+              <div>apps/api/src/weekly-plans/weekly-plans.service.ts</div>
+              <div>apps/api/src/block-instances/block-instances.service.ts</div>
+              <div>apps/api/src/progress/progress.service.ts</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 divide-x divide-slate-100">
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">Before &mdash; utility with no seam</p>
+              <!-- Hand-built: three boxes all importing the util -->
+              <div class="relative flex flex-col items-center gap-2 py-2">
+                <div class="flex gap-4">
+                  <div class="module-box leak-box">WeeklyPlans</div>
+                  <div class="module-box leak-box">BlockInstances</div>
+                  <div class="module-box leak-box">Progress</div>
+                </div>
+                <svg width="260" height="24" class="my-0">
+                  <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#64748b"/></marker></defs>
+                  <line x1="43" y1="2" x2="43" y2="22" class="arrow" style="stroke:#dc2626" marker-end="url(#arr)"/>
+                  <line x1="130" y1="2" x2="130" y2="22" class="arrow" style="stroke:#dc2626" marker-end="url(#arr)"/>
+                  <line x1="218" y1="2" x2="218" y2="22" class="arrow" style="stroke:#dc2626" marker-end="url(#arr)"/>
+                </svg>
+                <div class="module-box" style="border-style:dashed">getWeekBounds() — 14 LoC util</div>
+                <p class="text-xs text-slate-400 mt-2">Three direct imports. No seam. Locale/caching behavior must change in all three.</p>
+              </div>
+            </div>
+            <div class="px-6 py-5">
+              <p class="text-xs uppercase tracking-wider text-slate-400 mb-4">After &mdash; one interface</p>
+              <div class="relative flex flex-col items-center gap-2 py-2">
+                <div class="flex gap-4">
+                  <div class="module-box">WeeklyPlans</div>
+                  <div class="module-box">BlockInstances</div>
+                  <div class="module-box">Progress</div>
+                </div>
+                <svg width="260" height="24" class="my-0">
+                  <defs><marker id="arr2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#94a3b8"/></marker></defs>
+                  <line x1="43" y1="2" x2="43" y2="22" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+                  <line x1="130" y1="2" x2="130" y2="22" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+                  <line x1="218" y1="2" x2="218" y2="22" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+                </svg>
+                <div class="module-box deep-box">WeekService.currentBounds()</div>
+                <p class="text-xs text-slate-400 mt-2">Three seams. One interface. Locale or caching changes happen once.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-5 border-t border-slate-100 space-y-3">
+            <p class="text-sm text-slate-700"><strong>Problem.</strong> <code>getWeekBounds()</code> is a bare utility function imported by three modules &mdash; it has a shallow interface with no seam, making locale support, caching, or test substitution impossible without touching all three call sites.</p>
+            <p class="text-sm text-slate-700"><strong>Solution.</strong> Promote to a <code>WeekService</code> with one injectable interface; consumers depend on the seam, not the raw date computation.</p>
+            <ul class="text-xs text-slate-600 space-y-1 list-none">
+              <li>&#10003; <strong>leverage</strong> &mdash; one module to change week logic</li>
+              <li>&#10003; <strong>locality</strong> &mdash; date/timezone bugs in one place</li>
+              <li>&#10003; interface stable across 3 call sites</li>
+              <li>&#10003; injectable: test adapter substitutable at the seam</li>
+            </ul>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- TOP RECOMMENDATION -->
+      <section id="top-recommendation" class="deep rounded-xl p-8 text-slate-100">
+        <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">Top recommendation</p>
+        <h2 class="text-2xl font-serif font-semibold mb-3">
+          <a href="#c1" class="hover:text-emerald-400 transition-colors">Deepen the user-context seam</a>
+        </h2>
+        <p class="text-slate-300 text-sm max-w-2xl">
+          It's the root cause behind the most friction: four duplicate implementations, a DB upsert on every read, and the hardest coupling to untangle when auth eventually arrives. Fix this seam first — the other modules immediately become shallower, and the path to real authentication stays open.
+        </p>
+      </section>
+
+    </main>
+  </body>
+</html>

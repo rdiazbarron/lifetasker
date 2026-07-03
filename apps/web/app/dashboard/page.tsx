@@ -1,44 +1,32 @@
 "use client";
 
 import { Button, Card, Spinner } from "@heroui/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CompleteBlockButton } from "../../components/CompleteBlockButton";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
 import { ProgressByCategory } from "../../components/ProgressByCategory";
 import { WeeklyLevelCard } from "../../components/WeeklyLevelCard";
-import { api, BlockInstance, BlockType, Progress } from "../../lib/api";
+import { api, Progress } from "../../lib/api";
+import { useQuery } from "../../lib/useQuery";
 
 const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1 };
 
 export default function DashboardPage() {
-  const [progress, setProgress] = useState<Progress>(empty);
-  const [blockTypes, setBlockTypes] = useState<BlockType[]>([]);
-  const [completions, setCompletions] = useState<BlockInstance[]>([]);
+  const { data, loading, error, reload } = useQuery(() =>
+    Promise.all([
+      api.getCurrentProgress(),
+      api.getBlockTypes(),
+      api.getCurrentWeekCompletions(),
+    ]).then(([progress, blockTypes, completions]) => ({
+      progress,
+      blockTypes,
+      completions,
+    })),
+  );
+  const progress = data?.progress ?? empty;
+  const blockTypes = data?.blockTypes ?? [];
+  const completions = data?.completions ?? [];
   const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    try {
-      setError("");
-      const [p, b, c] = await Promise.all([
-        api.getCurrentProgress(),
-        api.getBlockTypes(),
-        api.getCurrentWeekCompletions(),
-      ]);
-      setProgress(p);
-      setBlockTypes(b);
-      setCompletions(c);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const completionCountsByType = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -83,13 +71,13 @@ export default function DashboardPage() {
                       onPress={async () => {
                         await api.undoLastCompletedBlock(bt.id);
                         setStatus(`Undid last ${bt.name} completion.`);
-                        await load();
+                        await reload();
                       }}
                       className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-200 transition hover:border-slate-600"
                     >
                       Undo
                     </Button>
-                    <CompleteBlockButton onClick={async () => { await api.completeBlock({ blockTypeId: bt.id }); setStatus(`Completed one ${bt.name} block.`); await load(); }} />
+                    <CompleteBlockButton onClick={async () => { await api.completeBlock({ blockTypeId: bt.id }); setStatus(`Completed one ${bt.name} block.`); await reload(); }} />
                   </div>
                 </li>
               ))}

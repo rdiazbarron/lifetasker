@@ -1,34 +1,25 @@
 "use client";
 
 import { Button, Card, Input, Label, Spinner, TextField } from "@heroui/react";
-import { FormEvent, useEffect, useState } from "react";
-import { api, Category } from "../../lib/api";
+import { FormEvent, useState } from "react";
+import { api } from "../../lib/api";
+import { useQuery } from "../../lib/useQuery";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const {
+    data,
+    loading,
+    error,
+    reload,
+    setError,
+  } = useQuery(() => api.getCategories());
+  const categories = data ?? [];
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState("");
   const [editingName, setEditingName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-
-  const load = async () => {
-    try {
-      setError("");
-      setCategories(await api.getCategories());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load categories.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,7 +38,7 @@ export default function CategoriesPage() {
       await api.createCategory({ name: cleanName });
       setNewName("");
       setStatus("Category created.");
-      await load();
+      await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create category.");
     } finally {
@@ -72,7 +63,7 @@ export default function CategoriesPage() {
       setEditingId("");
       setEditingName("");
       setStatus("Category updated.");
-      await load();
+      await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update category.");
     } finally {

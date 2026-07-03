@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { BlockInstancesController } from "./block-instances.controller";
 import { BlockInstancesService } from "./block-instances.service";
-import { WeeklyPlansModule } from "../weekly-plans/weekly-plans.module";
+import { PlanBootstrapperModule } from "../weekly-plans/plan-bootstrapper.module";
 @Module({
-  imports: [WeeklyPlansModule],
+  imports: [PlanBootstrapperModule],
   controllers: [BlockInstancesController],
   providers: [BlockInstancesService],
   exports: [BlockInstancesService],
