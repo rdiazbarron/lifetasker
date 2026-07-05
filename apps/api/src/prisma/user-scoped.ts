@@ -11,12 +11,19 @@ import { PrismaService } from "./prisma.service";
  * scoped `findFirst` (which returns nothing for another user's row), so those
  * operations are safe as long as callers check existence first.
  *
- * This slice applies scoping to `blockType`; the remaining owned models are
- * brought under the same extension in a follow-up.
+ * This slice applies scoping to `blockType` and `category`; the remaining owned
+ * models are brought under the same extension in a follow-up.
  */
 export function userScoped(prisma: PrismaService, userId: string) {
   const scopeWhere = ({ args, query }: { args: any; query: any }) => {
     args.where = { ...args.where, userId };
+    return query(args);
+  };
+
+  const stampOwner = ({ args, query }: { args: any; query: any }) => {
+    // Cast: the create input is a union of checked/unchecked shapes; stamping
+    // the scalar FK at runtime is what enforces ownership.
+    args.data = { ...(args.data as any), userId };
     return query(args);
   };
 
@@ -28,12 +35,15 @@ export function userScoped(prisma: PrismaService, userId: string) {
         count: scopeWhere,
         updateMany: scopeWhere,
         deleteMany: scopeWhere,
-        create({ args, query }) {
-          // Cast: the create input is a union of checked/unchecked shapes;
-          // stamping the scalar FK at runtime is what enforces ownership.
-          args.data = { ...(args.data as any), userId };
-          return query(args);
-        },
+        create: stampOwner,
+      },
+      category: {
+        findMany: scopeWhere,
+        findFirst: scopeWhere,
+        count: scopeWhere,
+        updateMany: scopeWhere,
+        deleteMany: scopeWhere,
+        create: stampOwner,
       },
     },
   });

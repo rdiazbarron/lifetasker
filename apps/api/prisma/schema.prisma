@@ -13,6 +13,7 @@ model User {
   name           String?
   emailVerified  Boolean        @default(false)
   image          String?
+  categories     Category[]
   blockTypes     BlockType[]
   weeklyPlans    WeeklyPlan[]
   blockInstances BlockInstance[]
@@ -72,12 +73,24 @@ model Verification {
 }
 
 model Category {
-  id         String      @id @default(cuid())
-  key        String      @unique
-  name       String
-  blockTypes BlockType[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  userId        String
+  key           String
+  name          String
+  // Importance bonus applied to points earned in this category, as a percent
+  // from 0 (baseline) to 100 (double). Read by scoring in a later slice.
+  weightPercent Int         @default(0)
+  // Hex color (#rrggbb) used by the overview grid and contribution heatmap.
+  color         String      @default("#6366f1")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blockTypes    BlockType[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Categories are per-user: two users may each own a "Study" category, so the
+  // derived key is unique within an owner rather than globally.
+  @@unique([userId, key])
+  @@index([userId])
 }
 
 model BlockType {

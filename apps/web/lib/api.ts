@@ -5,6 +5,9 @@ export type Category = {
   id: string;
   name: string;
   key?: string;
+  // Importance bonus as a percent (0..100); color is a #rrggbb hex.
+  weightPercent: number;
+  color: string;
 };
 
 export type BlockType = {
@@ -77,12 +80,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   getCategories: () => request<Category[]>("/categories"),
-  createCategory: (body: { name: string }) =>
+  createCategory: (body: {
+    name: string;
+    weightPercent?: number;
+    color?: string;
+  }) =>
     request<Category>("/categories", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  updateCategory: (id: string, body: { name: string }) =>
+  updateCategory: (
+    id: string,
+    body: Partial<{ name: string; weightPercent: number; color: string }>,
+  ) =>
     request<Category>(`/categories/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),
