@@ -57,10 +57,18 @@ export type Progress = {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
+    // Send the Better Auth session cookie on cross-origin API calls.
+    credentials: "include",
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     cache: "no-store",
   });
   if (!res.ok) {
+    // An expired/missing session surfaces as 401 — bounce to login rather than
+    // showing a broken page. (Full app-wide route protection lands in #21.)
+    if (res.status === 401 && typeof window !== "undefined") {
+      const next = encodeURIComponent(window.location.pathname);
+      window.location.href = `/login?next=${next}`;
+    }
     const text = await res.text();
     throw new Error(text || `Request failed: ${res.status}`);
   }

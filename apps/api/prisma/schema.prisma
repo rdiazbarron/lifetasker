@@ -11,11 +11,64 @@ model User {
   id             String         @id @default(cuid())
   email          String         @unique
   name           String?
+  emailVerified  Boolean        @default(false)
+  image          String?
   blockTypes     BlockType[]
   weeklyPlans    WeeklyPlan[]
   blockInstances BlockInstance[]
+  sessions       Session[]
+  accounts       Account[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+}
+
+// Authentication tables owned by Better Auth (running in apps/web) but stored
+// in this shared database. Model (PascalCase) and field names deliberately
+// match Better Auth's expectations so it maps onto the existing User identity
+// above — there is only one notion of "user". Prisma owns the migrations; the
+// API reads Session here to authenticate requests (see auth guard).
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Category {

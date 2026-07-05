@@ -1,33 +1,32 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { DEMO_USER_EMAIL, DEMO_USER_NAME } from "./demo-user";
+import { Inject, Injectable, Scope, UnauthorizedException } from "@nestjs/common";
+import { REQUEST } from "@nestjs/core";
+import { AuthenticatedRequest } from "../auth/auth.constants";
 
 /**
- * Resolves the current user's id. Today it upserts a single demo user and
- * caches the result for the lifetime of the process — the demo identity never
- * changes, so there is no reason to hit the database on every read.
+ * Resolves the current user's id for the lifetime of a single request.
  *
- * This is the seam where real authentication plugs in: swap the resolution for
- * a request-scoped principal (from a guard) and nothing downstream changes,
- * because every service already depends on this interface rather than on the
- * user lookup itself.
+ * The global auth guard validates the session and attaches the authenticated
+ * user id to the request before any controller runs; this service simply reads
+ * it back. Every downstream service depends on this seam rather than on the
+ * session lookup itself, so nothing else changed when real authentication
+ * replaced the previous hardcoded, process-cached demo identity.
+ *
+ * The demo user still exists as local seed data — you log in as it — but it is
+ * no longer resolved implicitly here.
  */
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class UserContextService {
-  private cachedUserId?: string;
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(REQUEST) private readonly request: AuthenticatedRequest,
+  ) {}
 
   async userId(): Promise<string> {
-    if (this.cachedUserId) return this.cachedUserId;
-
-    const user = await this.prisma.user.upsert({
-      where: { email: DEMO_USER_EMAIL },
-      update: {},
-      create: { email: DEMO_USER_EMAIL, name: DEMO_USER_NAME },
-    });
-
-    this.cachedUserId = user.id;
-    return user.id;
+    const userId = this.request.userId;
+    if (!userId) {
+      throw new UnauthorizedException(
+        "No authenticated user in request context.",
+      );
+    }
+    return userId;
   }
 }

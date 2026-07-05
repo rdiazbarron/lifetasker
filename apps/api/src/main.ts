@@ -16,7 +16,9 @@ async function bootstrap() {
     origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
+    // Session rides on a cookie, so the browser must be allowed to send
+    // credentials cross-origin. This requires an explicit origin (not "*").
+    credentials: true,
   });
 
   app.setGlobalPrefix("api");
