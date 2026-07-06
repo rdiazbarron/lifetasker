@@ -12,6 +12,12 @@ type Completion = Prisma.BlockInstanceGetPayload<{
   include: { blockType: { include: { category: true } } };
 }>;
 
+type WeekRow = {
+  weekStart: string;
+  weekEnd: string;
+  counts: Record<string, number>;
+};
+
 @Injectable()
 export class ProgressService {
   constructor(
@@ -50,6 +56,111 @@ export class ProgressService {
       progressByBlockType: this.aggregateByBlockType(planItems, completed),
       progressByCategory: this.aggregateByCategory(planItems, completed),
       weeklyLevel: LevelCalculator.compute(totalCompleted),
+    };
+  }
+
+  /**
+   * The whole history as a week × category grid: one row per week from the
+   * week of the user's first completion through the current week (newest
+   * first), each carrying per-category completion counts, zero-filled so
+   * inactive categories and empty weeks are visible.
+   */
+  async overview() {
+    const userId = await this.userContext.userId();
+
+    const categories = await this.prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true },
+    });
+
+    const completions = await this.prisma.blockInstance.findMany({
+      where: { userId },
+      orderBy: { completedAt: "asc" },
+      select: { completedAt: true, blockType: { select: { categoryId: true } } },
+    });
+
+    if (completions.length === 0) {
+      return { categories, weeks: [] as WeekRow[] };
+    }
+
+    // Tally counts keyed by (weekStart ISO, categoryId).
+    const counts = new Map<string, Map<string, number>>();
+    for (const c of completions) {
+      const key = this.week.boundsFor(c.completedAt).weekStart.toISOString();
+      const perCategory = counts.get(key) ?? new Map<string, number>();
+      const categoryId = c.blockType.categoryId;
+      perCategory.set(categoryId, (perCategory.get(categoryId) ?? 0) + 1);
+      counts.set(key, perCategory);
+    }
+
+    const firstStart = this.week.boundsFor(completions[0].completedAt).weekStart;
+    const currentStart = this.week.currentBounds().weekStart;
+
+    // Emit every week from first to current so gaps show as rows of zeros.
+    const weeks: WeekRow[] = [];
+    const cursor = new Date(firstStart);
+    while (cursor.getTime() <= currentStart.getTime()) {
+      const { weekStart, weekEnd } = this.week.boundsFor(cursor);
+      const perCategory = counts.get(weekStart.toISOString());
+      const row: Record<string, number> = {};
+      for (const category of categories) {
+        row[category.id] = perCategory?.get(category.id) ?? 0;
+      }
+      weeks.push({
+        weekStart: weekStart.toISOString(),
+        weekEnd: weekEnd.toISOString(),
+        counts: row,
+      });
+      cursor.setUTCDate(cursor.getUTCDate() + 7);
+    }
+
+    weeks.reverse(); // newest first
+    return { categories, weeks };
+  }
+
+  /**
+   * Per-day completion counts over the trailing ~12 months, keyed on the day a
+   * block was completed. Optionally filtered to a single category ("all" or
+   * omitted means every category). Only non-zero days are returned; the client
+   * fills the rest of the calendar with zeros.
+   */
+  async heatmap(categoryId?: string) {
+    const userId = await this.userContext.userId();
+
+    const now = new Date();
+    const start = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    start.setUTCDate(start.getUTCDate() - 364); // 53 weeks of history
+
+    const where: Prisma.BlockInstanceWhereInput = {
+      userId,
+      completedAt: { gte: start },
+    };
+    if (categoryId && categoryId !== "all") {
+      where.blockType = { categoryId };
+    }
+
+    const completions = await this.prisma.blockInstance.findMany({
+      where,
+      select: { completedAt: true },
+    });
+
+    const counts = new Map<string, number>();
+    for (const c of completions) {
+      const day = c.completedAt.toISOString().slice(0, 10);
+      counts.set(day, (counts.get(day) ?? 0) + 1);
+    }
+
+    const days = Array.from(counts.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      start: start.toISOString().slice(0, 10),
+      end: now.toISOString().slice(0, 10),
+      days,
     };
   }
 

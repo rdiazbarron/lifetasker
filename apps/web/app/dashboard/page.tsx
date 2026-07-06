@@ -3,11 +3,15 @@
 import { Button, Card, Spinner } from "@heroui/react";
 import { useMemo, useState } from "react";
 import { CompleteBlockButton } from "../../components/CompleteBlockButton";
+import { ContributionHeatmap } from "../../components/ContributionHeatmap";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
 import { ProgressByCategory } from "../../components/ProgressByCategory";
+import { WeekOverviewGrid } from "../../components/WeekOverviewGrid";
 import { WeeklyLevelCard } from "../../components/WeeklyLevelCard";
-import { api, Progress } from "../../lib/api";
+import { api, Overview, Progress } from "../../lib/api";
 import { useQuery } from "../../lib/useQuery";
+
+const emptyOverview: Overview = { categories: [], weeks: [] };
 
 const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, pointsThisWeek: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1 };
 
@@ -17,15 +21,18 @@ export default function DashboardPage() {
       api.getCurrentProgress(),
       api.getBlockTypes(),
       api.getCurrentWeekCompletions(),
-    ]).then(([progress, blockTypes, completions]) => ({
+      api.getOverview(),
+    ]).then(([progress, blockTypes, completions, overview]) => ({
       progress,
       blockTypes,
       completions,
+      overview,
     })),
   );
   const progress = data?.progress ?? empty;
   const blockTypes = data?.blockTypes ?? [];
   const completions = data?.completions ?? [];
+  const overview = data?.overview ?? emptyOverview;
   const [status, setStatus] = useState("");
 
   const completionCountsByType = useMemo(() => {
@@ -52,6 +59,8 @@ export default function DashboardPage() {
           <ProgressByCategory progress={progress} />
           <ProgressByBlockType progress={progress} />
         </div>
+        <ContributionHeatmap categories={overview.categories} />
+        <WeekOverviewGrid overview={overview} />
         <Card className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20 backdrop-blur">
           <h3 className="font-semibold text-slate-100">Quick complete</h3>
           <p className="mb-4 mt-2 text-sm text-slate-400">Log finished blocks and instantly refresh weekly progress.</p>
