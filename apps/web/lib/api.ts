@@ -58,6 +58,23 @@ export type Progress = {
   weeklyLevel: number;
 };
 
+export type Overview = {
+  categories: Array<{ id: string; name: string; color: string }>;
+  // Newest week first. counts is keyed by category id, zero-filled.
+  weeks: Array<{
+    weekStart: string;
+    weekEnd: string;
+    counts: Record<string, number>;
+  }>;
+};
+
+export type Heatmap = {
+  start: string;
+  end: string;
+  // Only non-zero days; the calendar fills the rest with zeros.
+  days: Array<{ date: string; count: number }>;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -151,6 +168,13 @@ export const api = {
     request<BlockInstance>(`/block-instances/complete/${blockTypeId}`, { method: "DELETE" }),
   getCurrentWeekCompletions: () => request<BlockInstance[]>("/block-instances/current-week"),
   getCurrentProgress: () => request<Progress>("/progress/current-week"),
+  getOverview: () => request<Overview>("/progress/overview"),
+  getHeatmap: (categoryId?: string) =>
+    request<Heatmap>(
+      categoryId && categoryId !== "all"
+        ? `/progress/heatmap?categoryId=${encodeURIComponent(categoryId)}`
+        : "/progress/heatmap",
+    ),
 };
 
 export const CATEGORY_STYLES = [
@@ -159,6 +183,18 @@ export const CATEGORY_STYLES = [
   "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   "bg-amber-500/20 text-amber-300 border-amber-500/30",
 ];
+
+// Turn a #rrggbb category color into an rgba() string at the given opacity, so
+// the overview grid and heatmap can shade cells by intensity in one hue.
+export function hexWithAlpha(hex: string, alpha: number): string {
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(hex);
+  if (!match) return hex;
+  const int = parseInt(match[1], 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export function formatWeekRange(weekStart: string, weekEnd: string) {
   const start = new Date(weekStart);
