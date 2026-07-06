@@ -5,8 +5,10 @@ import { BlockTypeForm } from "../../components/BlockTypeForm";
 import { BlockTypeList } from "../../components/BlockTypeList";
 import { api } from "../../lib/api";
 import { useQuery } from "../../lib/useQuery";
+import { useRequireAuth } from "../../lib/useRequireAuth";
 
 export default function BlockTypesPage() {
+  const { session, isPending } = useRequireAuth();
   const { data, loading, error, reload } = useQuery(() =>
     Promise.all([api.getCategories(), api.getBlockTypes()]).then(
       ([categories, blockTypes]) => ({ categories, blockTypes }),
@@ -15,6 +17,15 @@ export default function BlockTypesPage() {
   const categories = data?.categories ?? [];
   const blockTypes = data?.blockTypes ?? [];
   const [status, setStatus] = useState("");
+
+  // Hold the page until auth resolves; the guard redirects if unauthenticated.
+  if (isPending || !session) {
+    return (
+      <div className="flex justify-center py-20">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
