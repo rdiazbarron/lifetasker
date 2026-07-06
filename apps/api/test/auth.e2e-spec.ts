@@ -61,8 +61,10 @@ describe("Auth & per-user isolation (e2e)", () => {
     });
     userIds.push(userA.id, userB.id);
 
+    // Categories are user-owned; the block types created below belong to userA,
+    // so this category must be owned by userA too.
     const category = await prisma.category.create({
-      data: { key: `${TAG}-cat-${stamp}`, name: "Focus" },
+      data: { key: `${TAG}-cat-${stamp}`, name: "Focus", userId: userA.id },
     });
     categoryId = category.id;
     categoryIds.push(category.id);
