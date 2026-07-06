@@ -41,6 +41,7 @@ export type BlockInstance = {
 export type Progress = {
   totalTargetBlocks: number;
   totalCompletedBlocks: number;
+  pointsThisWeek: number;
   progressPercentage: number;
   progressByBlockType: Array<{
     blockTypeId: string;
