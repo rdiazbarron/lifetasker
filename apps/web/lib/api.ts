@@ -78,6 +78,22 @@ export type Overview = {
   }>;
 };
 
+export type Emblem = {
+  key: string;
+  group: "category" | "streak" | "level" | "perfect-week";
+  name: string;
+  description: string;
+  target: number;
+  current: number;
+  earned: boolean;
+};
+
+export type Emblems = {
+  emblems: Emblem[];
+  earnedCount: number;
+  total: number;
+};
+
 export type Heatmap = {
   start: string;
   end: string;
@@ -178,6 +194,7 @@ export const api = {
     request<BlockInstance>(`/block-instances/complete/${blockTypeId}`, { method: "DELETE" }),
   getCurrentWeekCompletions: () => request<BlockInstance[]>("/block-instances/current-week"),
   getCurrentProgress: () => request<Progress>("/progress/current-week"),
+  getEmblems: () => request<Emblems>("/emblems"),
   getOverview: () => request<Overview>("/progress/overview"),
   getHeatmap: (categoryId?: string) =>
     request<Heatmap>(
