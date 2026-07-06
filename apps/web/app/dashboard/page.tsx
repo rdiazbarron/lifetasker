@@ -13,7 +13,7 @@ import { useQuery } from "../../lib/useQuery";
 
 const emptyOverview: Overview = { categories: [], weeks: [] };
 
-const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, pointsThisWeek: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1 };
+const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, pointsThisWeek: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1, lifetime: { level: 1, totalPoints: 0, pointsIntoLevel: 0, pointsForNextLevel: 100, pointsToNextLevel: 100, progressPercent: 0 } };
 
 export default function DashboardPage() {
   const { data, loading, error, reload } = useQuery(() =>

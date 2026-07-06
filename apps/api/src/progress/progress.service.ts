@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { UserContextService } from "../common/user-context.service";
 import { WeekService } from "../common/week.service";
 import { LevelCalculator } from "./level-calculator";
+import { LifetimeLevelCalculator } from "./lifetime-level-calculator";
 
 type PlanItem = Prisma.WeeklyPlanItemGetPayload<{
   include: { blockType: { include: { category: true } } };
@@ -41,6 +42,12 @@ export class ProgressService {
       include: { blockType: { include: { category: true } } },
     });
 
+    // Lifetime points are the sum of every completion's frozen points, all-time.
+    const lifetimeAgg = await this.prisma.blockInstance.aggregate({
+      where: { userId },
+      _sum: { points: true },
+    });
+
     const planItems = plan?.planItems ?? [];
     const totalTarget = planItems.reduce((sum, i) => sum + i.targetCount, 0);
     const totalCompleted = completed.length;
@@ -56,6 +63,7 @@ export class ProgressService {
       progressByBlockType: this.aggregateByBlockType(planItems, completed),
       progressByCategory: this.aggregateByCategory(planItems, completed),
       weeklyLevel: LevelCalculator.compute(totalCompleted),
+      lifetime: LifetimeLevelCalculator.compute(lifetimeAgg._sum.points ?? 0),
     };
   }
 
