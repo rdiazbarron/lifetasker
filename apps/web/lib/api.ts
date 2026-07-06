@@ -56,6 +56,16 @@ export type Progress = {
     completed: number;
   }>;
   weeklyLevel: number;
+  lifetime: LifetimeProgress;
+};
+
+export type LifetimeProgress = {
+  level: number;
+  totalPoints: number;
+  pointsIntoLevel: number;
+  pointsForNextLevel: number;
+  pointsToNextLevel: number;
+  progressPercent: number;
 };
 
 export type Overview = {

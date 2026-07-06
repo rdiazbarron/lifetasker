@@ -15,10 +15,17 @@ export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
           </h2>
         </div>
 
-        <div className="text-right">
+        <div className="text-center">
           <p className="text-sm text-slate-300">Points this week</p>
           <p className="text-2xl font-semibold text-amber-300">
             {progress.pointsThisWeek}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-sm text-slate-300">Lifetime level</p>
+          <p className="text-2xl font-semibold text-emerald-300">
+            {progress.lifetime.level}
           </p>
         </div>
       </div>
@@ -45,6 +52,31 @@ export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
 
           <ProgressBar.Track className="h-3 overflow-hidden rounded-full bg-slate-800">
             <ProgressBar.Fill className="h-full rounded-full bg-gradient-to-r from-sky-400 to-violet-400 transition-all" />
+          </ProgressBar.Track>
+        </ProgressBar>
+      </div>
+
+      <div className="mt-5">
+        <ProgressBar
+          aria-label="Progress to next lifetime level"
+          className="w-full space-y-2"
+          value={Math.max(0, Math.min(progress.lifetime.progressPercent, 100))}
+          maxValue={100}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-sm font-medium text-slate-300">
+              {progress.lifetime.pointsToNextLevel} pts to level{" "}
+              {progress.lifetime.level + 1}
+            </Label>
+
+            <span className="text-sm font-medium text-slate-300">
+              {progress.lifetime.pointsIntoLevel}/
+              {progress.lifetime.pointsForNextLevel}
+            </span>
+          </div>
+
+          <ProgressBar.Track className="h-3 overflow-hidden rounded-full bg-slate-800">
+            <ProgressBar.Fill className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all" />
           </ProgressBar.Track>
         </ProgressBar>
       </div>
