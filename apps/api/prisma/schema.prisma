@@ -148,6 +148,10 @@ model BlockInstance {
   completedAt DateTime
   scheduledAt DateTime?
   notes       String?
+  // Points earned by this completion, computed once at completion time from the
+  // block's duration and its category weight, then frozen. Editing the category
+  // weight later never re-scores past completions. See progress/points-calculator.ts.
+  points      Int       @default(0)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   blockType   BlockType @relation(fields: [blockTypeId], references: [id], onDelete: Restrict)
   createdAt   DateTime  @default(now())
