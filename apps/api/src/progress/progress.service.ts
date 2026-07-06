@@ -38,10 +38,13 @@ export class ProgressService {
     const planItems = plan?.planItems ?? [];
     const totalTarget = planItems.reduce((sum, i) => sum + i.targetCount, 0);
     const totalCompleted = completed.length;
+    // Points earned this week: the sum of each completion's frozen points.
+    const pointsThisWeek = completed.reduce((sum, c) => sum + c.points, 0);
 
     return {
       totalTargetBlocks: totalTarget,
       totalCompletedBlocks: totalCompleted,
+      pointsThisWeek,
       progressPercentage:
         totalTarget > 0 ? Math.round((totalCompleted / totalTarget) * 100) : 0,
       progressByBlockType: this.aggregateByBlockType(planItems, completed),

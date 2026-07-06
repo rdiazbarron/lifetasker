@@ -4,6 +4,7 @@ import { UserContextService } from "../common/user-context.service";
 import { WeekService } from "../common/week.service";
 import { CompleteBlockDto } from "./dto/complete-block.dto";
 import { PlanBootstrapper } from "../weekly-plans/plan-bootstrapper.service";
+import { PointsCalculator } from "../progress/points-calculator";
 
 @Injectable()
 export class BlockInstancesService {
@@ -16,11 +17,31 @@ export class BlockInstancesService {
 
   async complete(dto: CompleteBlockDto) {
     const userId = await this.userContext.userId();
+
+    // The block type must belong to the caller; this also gives us the duration
+    // and the category weight to score the completion.
+    const blockType = await this.prisma.blockType.findFirst({
+      where: { id: dto.blockTypeId, userId },
+      include: { category: true },
+    });
+    if (!blockType) {
+      throw new NotFoundException("Block type not found");
+    }
+
     await this.planBootstrapper.ensureCurrentPlan(userId);
+
+    // Score the completion now and freeze it: later category-weight edits must
+    // not change points already earned. See progress/points-calculator.ts.
+    const points = PointsCalculator.compute(
+      blockType.durationMinutes,
+      blockType.category.weightPercent,
+    );
+
     return this.prisma.blockInstance.create({
       data: {
         userId,
         blockTypeId: dto.blockTypeId,
+        points,
         completedAt: dto.completedAt ? new Date(dto.completedAt) : new Date(),
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
         notes: dto.notes,

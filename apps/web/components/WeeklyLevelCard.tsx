@@ -6,12 +6,21 @@ export function WeeklyLevelCard({ progress }: { progress: WeeklyProgress }) {
 
   return (
     <Card className="rounded-2xl border border-sky-400/20 bg-gradient-to-r from-sky-950/80 to-violet-950/70 p-6 shadow-xl shadow-black/20">
-      <div className="space-y-1">
-        <p className="text-sm text-slate-300">Weekly summary</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm text-slate-300">Weekly summary</p>
 
-        <h2 className="text-2xl font-semibold text-slate-100">
-          Weekly Level {progress.weeklyLevel}
-        </h2>
+          <h2 className="text-2xl font-semibold text-slate-100">
+            Weekly Level {progress.weeklyLevel}
+          </h2>
+        </div>
+
+        <div className="text-right">
+          <p className="text-sm text-slate-300">Points this week</p>
+          <p className="text-2xl font-semibold text-amber-300">
+            {progress.pointsThisWeek}
+          </p>
+        </div>
       </div>
 
       <div className="mt-5">
