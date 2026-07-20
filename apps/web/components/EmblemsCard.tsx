@@ -2,6 +2,7 @@
 
 import { Card } from "@heroui/react";
 import { useEffect, useState } from "react";
+import { useSession } from "../lib/auth-client";
 import { Emblem, Emblems } from "../lib/api";
 
 const GROUP_LABELS: Record<Emblem["group"], string> = {
@@ -11,26 +12,38 @@ const GROUP_LABELS: Record<Emblem["group"], string> = {
   "perfect-week": "Perfect weeks",
 };
 
-const SEEN_KEY = "lifetasker.seen-emblems";
+const seenKeyFor = (userId: string) => `lifetasker.seen-emblems:${userId}`;
 
 export function EmblemsCard({ emblems: data }: { emblems: Emblems }) {
   const { emblems, earnedCount, total } = data;
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const [newlyEarned, setNewlyEarned] = useState<Emblem[]>([]);
 
   // Surface emblems earned since the last visit, then remember them as seen.
+  // Scoped per user so a shared browser doesn't leak one user's "seen" set to
+  // another. On the very first visit (no stored set), seed silently instead of
+  // celebrating every retroactively-earned emblem at once.
   useEffect(() => {
+    if (!userId) return;
+    const seenKey = seenKeyFor(userId);
     const earnedKeys = emblems.filter((e) => e.earned).map((e) => e.key);
+    const stored = localStorage.getItem(seenKey);
+    if (stored === null) {
+      localStorage.setItem(seenKey, JSON.stringify(earnedKeys));
+      return;
+    }
     let seen: string[] = [];
     try {
-      seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]");
+      seen = JSON.parse(stored);
     } catch {
       seen = [];
     }
     const seenSet = new Set(seen);
     const fresh = emblems.filter((e) => e.earned && !seenSet.has(e.key));
     if (fresh.length > 0) setNewlyEarned(fresh);
-    localStorage.setItem(SEEN_KEY, JSON.stringify(earnedKeys));
-  }, [emblems]);
+    localStorage.setItem(seenKey, JSON.stringify(earnedKeys));
+  }, [emblems, userId]);
 
   const groups = Object.keys(GROUP_LABELS) as Emblem["group"][];
 
