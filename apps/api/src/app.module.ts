@@ -8,6 +8,7 @@ import { BlockTypesModule } from "./block-types/block-types.module";
 import { WeeklyPlansModule } from "./weekly-plans/weekly-plans.module";
 import { BlockInstancesModule } from "./block-instances/block-instances.module";
 import { ProgressModule } from "./progress/progress.module";
+import { EmblemsModule } from "./emblems/emblems.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ProgressModule } from "./progress/progress.module";
     WeeklyPlansModule,
     BlockInstancesModule,
     ProgressModule,
+    EmblemsModule,
   ],
   controllers: [HealthController],
 })

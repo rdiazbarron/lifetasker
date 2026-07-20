@@ -4,14 +4,16 @@ import { Button, Card, Spinner } from "@heroui/react";
 import { useMemo, useState } from "react";
 import { CompleteBlockButton } from "../../components/CompleteBlockButton";
 import { ContributionHeatmap } from "../../components/ContributionHeatmap";
+import { EmblemsCard } from "../../components/EmblemsCard";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
 import { ProgressByCategory } from "../../components/ProgressByCategory";
 import { WeekOverviewGrid } from "../../components/WeekOverviewGrid";
 import { WeeklyLevelCard } from "../../components/WeeklyLevelCard";
-import { api, Overview, Progress } from "../../lib/api";
+import { api, Emblems, Overview, Progress } from "../../lib/api";
 import { useQuery } from "../../lib/useQuery";
 
 const emptyOverview: Overview = { categories: [], weeks: [] };
+const emptyEmblems: Emblems = { emblems: [], earnedCount: 0, total: 0 };
 
 const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, pointsThisWeek: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1, lifetime: { level: 1, totalPoints: 0, pointsIntoLevel: 0, pointsForNextLevel: 100, pointsToNextLevel: 100, progressPercent: 0 } };
 
@@ -22,17 +24,20 @@ export default function DashboardPage() {
       api.getBlockTypes(),
       api.getCurrentWeekCompletions(),
       api.getOverview(),
-    ]).then(([progress, blockTypes, completions, overview]) => ({
+      api.getEmblems(),
+    ]).then(([progress, blockTypes, completions, overview, emblems]) => ({
       progress,
       blockTypes,
       completions,
       overview,
+      emblems,
     })),
   );
   const progress = data?.progress ?? empty;
   const blockTypes = data?.blockTypes ?? [];
   const completions = data?.completions ?? [];
   const overview = data?.overview ?? emptyOverview;
+  const emblems = data?.emblems ?? emptyEmblems;
   const [status, setStatus] = useState("");
 
   const completionCountsByType = useMemo(() => {
@@ -59,6 +64,7 @@ export default function DashboardPage() {
           <ProgressByCategory progress={progress} />
           <ProgressByBlockType progress={progress} />
         </div>
+        <EmblemsCard emblems={emblems} />
         <ContributionHeatmap categories={overview.categories} />
         <WeekOverviewGrid overview={overview} />
         <Card className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20 backdrop-blur">
