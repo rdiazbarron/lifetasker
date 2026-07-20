@@ -25,6 +25,7 @@ const PROTECTED_PREFIXES = [
   "/block-types",
   "/categories",
   "/weekly-plan",
+  "/settings",
 ];
 const AUTH_ROUTES = ["/login", "/signup"];
 

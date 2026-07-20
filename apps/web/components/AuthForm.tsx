@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signIn, signUp } from "../lib/auth-client";
+import { GOOGLE_PROVIDER_ID, GOOGLE_UI_ENABLED } from "../lib/google-calendar";
 
 const INPUT_CLASS =
   "w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
@@ -49,6 +50,20 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
     router.replace(nextTarget());
     router.refresh();
+  }
+
+  async function handleGoogle() {
+    setError("");
+    setBusy(true);
+    // Redirects to Google on success; only returns here if it fails to start.
+    const result = await signIn.social({
+      provider: GOOGLE_PROVIDER_ID,
+      callbackURL: nextTarget(),
+    });
+    if (result?.error) {
+      setBusy(false);
+      setError(result.error.message || "Could not sign in with Google.");
+    }
   }
 
   return (
@@ -122,6 +137,24 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 : "Log in"}
           </Button>
         </form>
+
+        {GOOGLE_UI_ENABLED && (
+          <>
+            <div className="mt-6 flex items-center gap-3 text-xs text-slate-500">
+              <span className="h-px flex-1 bg-slate-800" />
+              or
+              <span className="h-px flex-1 bg-slate-800" />
+            </div>
+            <Button
+              type="button"
+              isDisabled={busy}
+              onPress={handleGoogle}
+              className="mt-6 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 font-medium text-slate-100 transition hover:border-slate-600 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Continue with Google
+            </Button>
+          </>
+        )}
 
         <p className="mt-6 text-center text-sm text-slate-400">
           {isSignup ? (
