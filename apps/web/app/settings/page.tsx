@@ -2,14 +2,13 @@
 
 import { Button, Card, Spinner } from "@heroui/react";
 import { useCallback, useEffect, useState } from "react";
-import { authClient } from "../../lib/auth-client";
+import { authClient, useSession } from "../../lib/auth-client";
 import {
   GOOGLE_CALENDAR_SCOPES,
   GOOGLE_PROVIDER_ID,
   GOOGLE_UI_ENABLED,
   hasCalendarScope,
 } from "../../lib/google-calendar";
-import { useRequireAuth } from "../../lib/useRequireAuth";
 
 type LinkedAccount = {
   providerId: string;
@@ -18,7 +17,9 @@ type LinkedAccount = {
 };
 
 export default function SettingsPage() {
-  const { session, isPending } = useRequireAuth();
+  // Route protection is centralised in RouteGuard (/settings is a protected
+  // prefix); here we only need the session to gate the initial data load.
+  const { data: session, isPending } = useSession();
 
   // null = not loaded yet; array (possibly empty) = loaded.
   const [accounts, setAccounts] = useState<LinkedAccount[] | null>(null);
