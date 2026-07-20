@@ -32,11 +32,19 @@ export type WeeklyPlan = {
   planItems: WeeklyPlanItem[];
 };
 
+export type CalendarSyncStatus = "NOT_APPLICABLE" | "SYNCED" | "PENDING";
+
 export type BlockInstance = {
   id: string;
   blockTypeId: string;
   completedAt: string;
+  // Google Calendar sync (#35/#36). PENDING means the completion hasn't reached
+  // the calendar yet; NOT_APPLICABLE means the user isn't calendar-connected.
+  calendarSyncStatus: CalendarSyncStatus;
+  googleEventId: string | null;
 };
+
+export type SyncSummary = { synced: number; pending: number };
 
 export type Progress = {
   totalTargetBlocks: number;
@@ -193,6 +201,8 @@ export const api = {
   undoLastCompletedBlock: (blockTypeId: string) =>
     request<BlockInstance>(`/block-instances/complete/${blockTypeId}`, { method: "DELETE" }),
   getCurrentWeekCompletions: () => request<BlockInstance[]>("/block-instances/current-week"),
+  syncCalendar: () =>
+    request<SyncSummary>("/block-instances/sync", { method: "POST" }),
   getCurrentProgress: () => request<Progress>("/progress/current-week"),
   getEmblems: () => request<Emblems>("/emblems"),
   getOverview: () => request<Overview>("/progress/overview"),

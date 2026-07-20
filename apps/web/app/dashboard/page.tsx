@@ -39,6 +39,15 @@ export default function DashboardPage() {
   const overview = data?.overview ?? emptyOverview;
   const emblems = data?.emblems ?? emptyEmblems;
   const [status, setStatus] = useState("");
+  const [syncing, setSyncing] = useState(false);
+
+  // Completions still waiting to reach Google Calendar. Only connected users
+  // ever have PENDING rows (others are NOT_APPLICABLE), so not-connected users
+  // never see the badge below.
+  const pendingCount = useMemo(
+    () => completions.filter((c) => c.calendarSyncStatus === "PENDING").length,
+    [completions],
+  );
 
   const completionCountsByType = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -58,6 +67,42 @@ export default function DashboardPage() {
       </div>
       {error && <Card className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">{error}</Card>}
       {status && <Card className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">{status}</Card>}
+      {pendingCount > 0 && (
+        <Card className="flex flex-row items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="flex items-center gap-2 text-amber-300">
+            <span className="rounded-full border border-amber-400/40 bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium">
+              Not synced
+            </span>
+            <span className="text-sm">
+              {pendingCount} completion{pendingCount === 1 ? "" : "s"} haven&rsquo;t reached Google Calendar yet.
+            </span>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            isDisabled={syncing}
+            onPress={async () => {
+              setSyncing(true);
+              try {
+                const result = await api.syncCalendar();
+                setStatus(
+                  result.pending > 0
+                    ? `Synced ${result.synced}; ${result.pending} still pending — will retry.`
+                    : `Synced ${result.synced} completion${result.synced === 1 ? "" : "s"} to Google Calendar.`,
+                );
+                await reload();
+              } catch {
+                setStatus("Couldn't sync right now. We'll retry automatically.");
+              } finally {
+                setSyncing(false);
+              }
+            }}
+            className="shrink-0 rounded-xl border border-amber-400/40 bg-amber-500/20 px-3 py-1.5 text-sm font-medium text-amber-200 transition hover:bg-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {syncing ? "Syncing..." : "Sync now"}
+          </Button>
+        </Card>
+      )}
       {loading ? <div className="flex justify-center py-20"><Spinner /></div> : <>
         <WeeklyLevelCard progress={progress} />
         <div className="grid gap-4 md:grid-cols-2">

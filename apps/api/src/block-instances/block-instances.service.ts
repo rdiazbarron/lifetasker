@@ -9,9 +9,22 @@ import { PointsCalculator } from "../progress/points-calculator";
 import { CalendarPort } from "../calendar/calendar.port";
 import { computeEventWindow } from "../calendar/event-window";
 
+export interface SyncSummary {
+  /** Rows that reached the calendar on this pass. */
+  synced: number;
+  /** Rows still PENDING after this pass (write attempted and failed). */
+  pending: number;
+}
+
 @Injectable()
 export class BlockInstancesService {
   private readonly logger = new Logger(BlockInstancesService.name);
+
+  // Coalesces overlapping drains per user: a completion, a dashboard load, and a
+  // manual "Sync now" can all fire at once. Sharing one in-flight promise means
+  // a PENDING row is never picked up by two passes at the same time — the guard
+  // that keeps retries from duplicating events (alongside the id-based filter).
+  private readonly drains = new Map<string, Promise<SyncSummary>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -67,8 +80,10 @@ export class BlockInstancesService {
 
     if (connected) {
       // Fire-and-forget: deliberately NOT awaited so the HTTP response returns
-      // without the Google round-trip. `pushToCalendar` never rejects.
-      void this.pushToCalendar(userId, instance, blockType);
+      // without the Google round-trip. Draining here (rather than pushing just
+      // this row) also sweeps up any earlier PENDING rows — the "retry on next
+      // completion" half of #36. `syncPending` never rejects.
+      void this.syncPending(userId);
     }
 
     return instance;
@@ -84,16 +99,63 @@ export class BlockInstancesService {
   }
 
   /**
-   * Background, best-effort push of a completed block to Google Calendar. Runs
-   * after the completion response has already been sent, so it never blocks the
-   * user. Never rejects: on success it flips the row to SYNCED with the event
-   * id; on failure the row keeps its PENDING status for #36's retry.
+   * Re-syncs every PENDING completion the user has waiting, and returns a
+   * summary. This is the single sync path — used by completion, dashboard load,
+   * and the manual "Sync now" action alike.
+   *
+   * Idempotent by construction: only rows that are still PENDING *and* carry no
+   * event id are (re)synced, so an already-synced completion is never
+   * duplicated. Overlapping calls for the same user share one in-flight drain
+   * (see `drains`) so two passes can never race on the same row. Never rejects.
    */
-  private async pushToCalendar(
+  async syncPending(userId: string): Promise<SyncSummary> {
+    const inflight = this.drains.get(userId);
+    if (inflight) return inflight;
+
+    const drain = this.drainPending(userId).finally(() =>
+      this.drains.delete(userId),
+    );
+    this.drains.set(userId, drain);
+    return drain;
+  }
+
+  private async drainPending(userId: string): Promise<SyncSummary> {
+    // Cheap local check; also guards against wasted work if a user disconnected
+    // Google while rows were still PENDING.
+    if (!(await this.isConnectedSafely(userId))) {
+      return { synced: 0, pending: 0 };
+    }
+
+    const rows = await this.prisma.blockInstance.findMany({
+      where: {
+        userId,
+        calendarSyncStatus: "PENDING",
+        googleEventId: null,
+      },
+      include: { blockType: { include: { category: true } } },
+      orderBy: { completedAt: "asc" },
+    });
+
+    let synced = 0;
+    let pending = 0;
+    for (const row of rows) {
+      if (await this.pushOne(userId, row, row.blockType)) synced += 1;
+      else pending += 1;
+    }
+    return { synced, pending };
+  }
+
+  /**
+   * Best-effort push of a single completion to Google Calendar. On success it
+   * flips the row to SYNCED with the event id (returning true); on failure the
+   * row keeps its PENDING status for a later retry (returning false). Never
+   * rejects.
+   */
+  private async pushOne(
     userId: string,
     instance: BlockInstance,
     blockType: BlockType & { category: Category },
-  ): Promise<void> {
+  ): Promise<boolean> {
     const window = computeEventWindow(
       instance.completedAt,
       blockType.durationMinutes,
@@ -116,12 +178,20 @@ export class BlockInstancesService {
         where: { id: instance.id },
         data: { calendarSyncStatus: "SYNCED", googleEventId },
       });
+      return true;
     } catch (error) {
-      // Row stays PENDING (its creation value); #36's retry will pick it up.
+      // Row stays PENDING (its creation value); the next retry will pick it up.
       this.logger.warn(
         `Calendar sync failed for completion ${instance.id}: ${String(error)}`,
       );
+      return false;
     }
+  }
+
+  /** Manual "Sync now": drain the caller's PENDING completions on demand. */
+  async syncNow(): Promise<SyncSummary> {
+    const userId = await this.userContext.userId();
+    return this.syncPending(userId);
   }
 
   async undoLast(blockTypeId: string) {
@@ -143,12 +213,32 @@ export class BlockInstancesService {
       );
     }
 
+    // If this completion reached the calendar, remove its event too — but
+    // best-effort: a failed remote delete must not block the local undo (the
+    // completion, its points, and history are the source of truth).
+    if (latest.googleEventId) {
+      try {
+        await this.calendar.deleteEvent(userId, latest.googleEventId);
+      } catch (error) {
+        this.logger.warn(
+          `Calendar event delete failed on undo for ${latest.id}: ${String(error)}`,
+        );
+      }
+    }
+
     return this.prisma.blockInstance.delete({ where: { id: latest.id } });
   }
 
   async currentWeek() {
     const userId = await this.userContext.userId();
     const { weekStart, weekEnd } = this.week.currentBounds();
+
+    // Retry any PENDING completions in the background on every dashboard load —
+    // the "retry on dashboard load" half of #36. Fire-and-forget so the list
+    // returns without waiting on Google; the freshly synced statuses show up on
+    // the next poll.
+    void this.syncPending(userId);
+
     return this.prisma.blockInstance.findMany({
       where: { userId, completedAt: { gte: weekStart, lte: weekEnd } },
       include: { blockType: { include: { category: true } } },

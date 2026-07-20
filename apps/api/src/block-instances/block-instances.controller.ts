@@ -13,4 +13,7 @@ export class BlockInstancesController {
   @Get("current-week") currentWeek() {
     return this.service.currentWeek();
   }
+  @Post("sync") syncNow() {
+    return this.service.syncNow();
+  }
 }
