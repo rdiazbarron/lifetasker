@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { AppHeader } from "../components/AppHeader";
+import { RouteGuard } from "../components/RouteGuard";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-slate-950 text-slate-100">
         <Providers>
           <AppHeader />
-          {children}
+          <RouteGuard>{children}</RouteGuard>
         </Providers>
       </body>
     </html>
