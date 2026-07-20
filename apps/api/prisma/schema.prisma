@@ -54,6 +54,10 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
+  // Id of the dedicated "LifeTasker" Google calendar created once for this
+  // connected account and remembered so completions don't re-create it. Owned
+  // by the API's calendar sync (#35); Better Auth never reads this column.
+  calendarId            String?
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
@@ -152,6 +156,14 @@ model BlockInstance {
   // block's duration and its category weight, then frozen. Editing the category
   // weight later never re-scores past completions. See progress/points-calculator.ts.
   points      Int       @default(0)
+  // Google Calendar sync (#35). One-way, best-effort, completion-only.
+  //   NOT_APPLICABLE — the owner has no calendar-connected Google account.
+  //   SYNCED         — an event was created; `googleEventId` holds its id.
+  //   PENDING        — the write was attempted but failed; awaits retry (#36).
+  // The completion itself never depends on this: it is persisted first and the
+  // sync is a follow-on that can only downgrade the status, never fail the row.
+  calendarSyncStatus CalendarSyncStatus @default(NOT_APPLICABLE)
+  googleEventId      String?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   blockType   BlockType @relation(fields: [blockTypeId], references: [id], onDelete: Restrict)
   createdAt   DateTime  @default(now())
@@ -159,4 +171,12 @@ model BlockInstance {
   @@index([userId])
   @@index([blockTypeId])
   @@index([completedAt])
+  // #36 retries scan for PENDING rows; keep that lookup cheap.
+  @@index([calendarSyncStatus])
+}
+
+enum CalendarSyncStatus {
+  NOT_APPLICABLE
+  SYNCED
+  PENDING
 }
