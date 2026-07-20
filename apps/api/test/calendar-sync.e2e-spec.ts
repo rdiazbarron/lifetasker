@@ -137,15 +137,38 @@ describe("Calendar sync on completion (e2e)", () => {
 
   beforeEach(() => calendar.reset());
 
-  it("syncs a connected user's completion as a single SYNCED event", async () => {
+  const storedRow = (id: string) =>
+    prisma.blockInstance.findUnique({ where: { id } });
+
+  // The calendar write is fire-and-forget, so the row settles a beat after the
+  // HTTP response returns. Poll (against the instant fake) rather than sleep.
+  async function waitFor(
+    cond: () => Promise<boolean>,
+    timeoutMs = 3000,
+  ): Promise<void> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (await cond()) return;
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    throw new Error("Condition not met within timeout");
+  }
+
+  it("returns instantly as PENDING, then syncs to SYNCED in the background", async () => {
     const res = await request(app.getHttpServer())
       .post("/api/v1/block-instances/complete")
       .set("Cookie", cookieFor(token))
       .send({ blockTypeId })
       .expect(201);
 
-    expect(res.body.calendarSyncStatus).toBe("SYNCED");
-    expect(res.body.googleEventId).toBe("fake-event-1");
+    // The response is not blocked on the Google write, so it is still PENDING.
+    expect(res.body.calendarSyncStatus).toBe("PENDING");
+    expect(res.body.googleEventId).toBeNull();
+
+    // The background write lands shortly after and flips the row to SYNCED.
+    await waitFor(
+      async () => (await storedRow(res.body.id))?.calendarSyncStatus === "SYNCED",
+    );
 
     // Exactly one event, carrying the block's details.
     expect(calendar.createCalls).toHaveLength(1);
@@ -158,14 +181,11 @@ describe("Calendar sync on completion (e2e)", () => {
     expect(input.description).toContain("Category: Study");
     expect(input.description).toContain("Points: 5");
 
-    const stored = await prisma.blockInstance.findUnique({
-      where: { id: res.body.id },
-    });
-    expect(stored?.calendarSyncStatus).toBe("SYNCED");
-    expect(stored?.googleEventId).toBe("fake-event-1");
+    const row = await storedRow(res.body.id);
+    expect(row?.googleEventId).toBe("fake-event-1");
   });
 
-  it("still completes (points intact) and marks PENDING when the write fails", async () => {
+  it("still completes instantly (points intact) and stays PENDING when the write fails", async () => {
     calendar.failCreate = true;
 
     const res = await request(app.getHttpServer())
@@ -174,18 +194,17 @@ describe("Calendar sync on completion (e2e)", () => {
       .send({ blockTypeId })
       .expect(201);
 
-    // The completion itself is unaffected: it succeeded and kept its points.
+    // The completion itself is unaffected: instant success, points kept.
     expect(res.body.points).toBe(5);
     expect(res.body.calendarSyncStatus).toBe("PENDING");
     expect(res.body.googleEventId).toBeNull();
 
-    expect(calendar.createCalls).toHaveLength(1); // attempted once
+    // The background attempt runs and fails; the row keeps its PENDING status.
+    await waitFor(async () => calendar.createCalls.length === 1);
 
-    const stored = await prisma.blockInstance.findUnique({
-      where: { id: res.body.id },
-    });
-    expect(stored?.calendarSyncStatus).toBe("PENDING");
-    expect(stored?.googleEventId).toBeNull();
+    const row = await storedRow(res.body.id);
+    expect(row?.calendarSyncStatus).toBe("PENDING");
+    expect(row?.googleEventId).toBeNull();
   });
 
   it("makes no port calls for a not-connected user (NOT_APPLICABLE)", async () => {

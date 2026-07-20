@@ -43,8 +43,16 @@ export class BlockInstancesService {
       blockType.category.weightPercent,
     );
 
-    // The completion is persisted first and always succeeds; the calendar sync
-    // is a best-effort follow-on that can only annotate the row afterwards.
+    // Whether the user is calendar-connected is a fast, local DB check (no
+    // network), so it is safe to resolve before responding.
+    const connected = await this.isConnectedSafely(userId);
+
+    // Persist the completion and return IMMEDIATELY. Marking a block done must
+    // be instant and must never wait on — or fail because of — Google (the #33
+    // hybrid model). A connected user's row starts PENDING; the actual calendar
+    // write runs in the background (below) and flips it to SYNCED, or leaves it
+    // PENDING for #36's retry. Points and history are committed here, up front,
+    // so they never depend on Google being reachable.
     const instance = await this.prisma.blockInstance.create({
       data: {
         userId,
@@ -53,32 +61,39 @@ export class BlockInstancesService {
         completedAt: dto.completedAt ? new Date(dto.completedAt) : new Date(),
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
         notes: dto.notes,
+        calendarSyncStatus: connected ? "PENDING" : "NOT_APPLICABLE",
       },
     });
 
-    return this.syncToCalendar(userId, instance, blockType);
+    if (connected) {
+      // Fire-and-forget: deliberately NOT awaited so the HTTP response returns
+      // without the Google round-trip. `pushToCalendar` never rejects.
+      void this.pushToCalendar(userId, instance, blockType);
+    }
+
+    return instance;
+  }
+
+  private async isConnectedSafely(userId: string): Promise<boolean> {
+    try {
+      return await this.calendar.isConnected(userId);
+    } catch (error) {
+      this.logger.warn(`Calendar connection check failed: ${String(error)}`);
+      return false;
+    }
   }
 
   /**
-   * One-way, best-effort push of a completion to Google Calendar. Never throws:
-   * an unconnected user leaves the row NOT_APPLICABLE (no calls made), a
-   * successful write marks it SYNCED with the event id, and any failure leaves
-   * it PENDING for #36's retry to pick up. Points and history are already
-   * committed by the time this runs, so they are never at risk.
+   * Background, best-effort push of a completed block to Google Calendar. Runs
+   * after the completion response has already been sent, so it never blocks the
+   * user. Never rejects: on success it flips the row to SYNCED with the event
+   * id; on failure the row keeps its PENDING status for #36's retry.
    */
-  private async syncToCalendar(
+  private async pushToCalendar(
     userId: string,
     instance: BlockInstance,
     blockType: BlockType & { category: Category },
-  ): Promise<BlockInstance> {
-    let connected = false;
-    try {
-      connected = await this.calendar.isConnected(userId);
-    } catch (error) {
-      this.logger.warn(`Calendar connection check failed: ${String(error)}`);
-    }
-    if (!connected) return instance; // NOT_APPLICABLE — nothing to do
-
+  ): Promise<void> {
     const window = computeEventWindow(
       instance.completedAt,
       blockType.durationMinutes,
@@ -97,18 +112,15 @@ export class BlockInstancesService {
         end: window.end,
         colorHex: blockType.category.color,
       });
-      return this.prisma.blockInstance.update({
+      await this.prisma.blockInstance.update({
         where: { id: instance.id },
         data: { calendarSyncStatus: "SYNCED", googleEventId },
       });
     } catch (error) {
+      // Row stays PENDING (its creation value); #36's retry will pick it up.
       this.logger.warn(
         `Calendar sync failed for completion ${instance.id}: ${String(error)}`,
       );
-      return this.prisma.blockInstance.update({
-        where: { id: instance.id },
-        data: { calendarSyncStatus: "PENDING" },
-      });
     }
   }
 
