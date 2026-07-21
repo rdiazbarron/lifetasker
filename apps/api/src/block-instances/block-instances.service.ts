@@ -8,6 +8,7 @@ import { PlanBootstrapper } from "../weekly-plans/plan-bootstrapper.service";
 import { PointsCalculator } from "../progress/points-calculator";
 import { CalendarPort } from "../calendar/calendar.port";
 import { computeEventWindow } from "../calendar/event-window";
+import { calendarEventId } from "../calendar/event-id";
 
 export interface SyncSummary {
   /** Rows that reached the calendar on this pass. */
@@ -188,6 +189,9 @@ export class BlockInstancesService {
 
     try {
       const googleEventId = await this.calendar.createEvent(userId, {
+        // Deterministic id keyed on the completion (#47) makes the create
+        // idempotent, so the retry below is safe even in the gap this closes.
+        eventId: calendarEventId(instance.id),
         summary: blockType.name,
         description: descriptionLines.join("\n"),
         start: window.start,
@@ -195,14 +199,13 @@ export class BlockInstancesService {
         colorHex: blockType.category.color,
       });
       // Persisting the id right after creating the event closes the dedupe loop:
-      // once SYNCED, the row is filtered out of every future drain. The one gap
-      // is a failure *between* create and this update (a DB error whose write
-      // didn't commit, or a crash) — the row stays PENDING with no id and a
-      // retry would create a second event. Closing it for real needs a
-      // client-supplied idempotent event id (create-or-get keyed on the
-      // completion id); that lives in the port/GoogleCalendarService, out of
-      // scope for #36. We deliberately do NOT compensate by deleting here: an
-      // update that threw *after* committing would then lose a real event.
+      // once SYNCED, the row is filtered out of every future drain. If we fail
+      // *between* create and this update (a DB error whose write didn't commit,
+      // or a crash) the row stays PENDING with no id — but the retry is now
+      // harmless: it re-inserts the SAME deterministic event id, which the port
+      // resolves as create-or-get (#47) rather than a duplicate. We still do NOT
+      // compensate by deleting here: an update that threw *after* committing
+      // would then lose a real event.
       await this.prisma.blockInstance.update({
         where: { id: instance.id },
         data: { calendarSyncStatus: "SYNCED", googleEventId },

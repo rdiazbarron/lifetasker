@@ -52,6 +52,10 @@ export class GoogleCalendarService extends CalendarPort {
     const calendarId = await this.ensureCalendar(calendar, account);
 
     const event: calendar_v3.Schema$Event = {
+      // Caller-supplied deterministic id (#47) makes the insert idempotent: a
+      // retry after a create-ok/persist-fail crash reuses this id and Google
+      // rejects the duplicate (409) instead of making a second event.
+      id: input.eventId,
       summary: input.summary,
       description: input.description,
       // UTC dateTimes pin the event to the exact instant it happened; the
@@ -61,16 +65,23 @@ export class GoogleCalendarService extends CalendarPort {
       colorId: nearestGoogleColorId(input.colorHex),
     };
 
-    const created = await calendar.events.insert({
-      calendarId,
-      requestBody: event,
-    });
-
-    const eventId = created.data.id;
-    if (!eventId) {
-      throw new Error("Google Calendar returned no event id.");
+    try {
+      const created = await calendar.events.insert({
+        calendarId,
+        requestBody: event,
+      });
+      const eventId = created.data.id;
+      if (!eventId) {
+        throw new Error("Google Calendar returned no event id.");
+      }
+      return eventId;
+    } catch (error) {
+      // The event already exists under our deterministic id — a previous
+      // attempt created it but we never persisted the id. Treat create-or-get
+      // as success and return the id we asked for.
+      if (this.isDuplicate(error)) return input.eventId;
+      throw error;
     }
-    return eventId;
   }
 
   async deleteEvent(userId: string, eventId: string): Promise<void> {
@@ -187,6 +198,12 @@ export class GoogleCalendarService extends CalendarPort {
   private isNotFound(error: unknown): boolean {
     const code = (error as { code?: number | string })?.code;
     return code === 404 || code === 410 || code === "404" || code === "410";
+  }
+
+  /** A 409 from `events.insert` means our deterministic id is already taken. */
+  private isDuplicate(error: unknown): boolean {
+    const code = (error as { code?: number | string })?.code;
+    return code === 409 || code === "409";
   }
 
   private get clientId(): string | undefined {
