@@ -32,11 +32,9 @@ const GROUP_ACCENT: Record<Group, string> = {
 
 const LOCKED_ACCENT = "#64748b"; // slate-500
 
-function parseArt(art: string): { group: Group; rank: number } {
-  const rank = Number(art.slice(-1));
-  const group = art.slice(0, -2) as Group;
-  return { group, rank };
-}
+// The tier rank (1..3) is the trailing digit of the art key; the group comes
+// from the emblem's own typed field rather than re-parsing it out of the key.
+const rankFromArt = (art: string): number => Number(art.slice(-1));
 
 // The per-group motif, drawn in `currentColor` so the wrapper's color controls
 // the tint (and grayscale/locked state).
@@ -82,10 +80,11 @@ export function EmblemBadge({
   emblem,
   size = 56,
 }: {
-  emblem: Pick<Emblem, "art" | "color" | "earned" | "name">;
+  emblem: Pick<Emblem, "art" | "color" | "earned" | "name" | "group">;
   size?: number;
 }) {
-  const { group, rank } = parseArt(emblem.art);
+  const group = emblem.group;
+  const rank = rankFromArt(emblem.art);
   const accent = emblem.earned
     ? emblem.color ?? GROUP_ACCENT[group]
     : LOCKED_ACCENT;

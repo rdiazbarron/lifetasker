@@ -10,8 +10,8 @@ const navItems = [
   { href: "/block-types", label: "Block Types" },
   { href: "/categories", label: "Categories" },
   { href: "/weekly-plan", label: "Weekly Plan" },
-  { href: "/emblems", label: "Emblems" },
   { href: "/dashboard", label: "Progress" },
+  { href: "/emblems", label: "Emblems" },
   { href: "/settings", label: "Settings" },
 ];
 

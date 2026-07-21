@@ -3,7 +3,7 @@
 import { Card } from "@heroui/react";
 import { Emblem } from "../../lib/api";
 import { useEmblems } from "../../lib/emblems-context";
-import { EmblemBadge } from "../../components/EmblemBadge";
+import { EmblemTile } from "../../components/EmblemTile";
 
 const GROUP_LABELS: Record<Emblem["group"], string> = {
   category: "Category milestones",
@@ -21,7 +21,7 @@ const GROUPS = Object.keys(GROUP_LABELS) as Emblem["group"][];
  */
 export default function EmblemsPage() {
   const {
-    emblems: { emblems, earnedCount, total },
+    catalog: { emblems, earnedCount, total },
   } = useEmblems();
 
   return (
@@ -56,29 +56,7 @@ export default function EmblemsPage() {
             </div>
             <div className="mt-4 flex flex-wrap gap-4">
               {items.map((e) => (
-                <div
-                  key={e.key}
-                  title={e.description}
-                  className={
-                    e.earned
-                      ? "flex w-28 flex-col items-center gap-1 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-center"
-                      : "flex w-28 flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-950/60 p-3 text-center"
-                  }
-                >
-                  <EmblemBadge emblem={e} size={56} />
-                  <span
-                    className={
-                      e.earned
-                        ? "text-xs font-medium text-amber-200"
-                        : "text-xs text-slate-400"
-                    }
-                  >
-                    {e.name}
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    {e.earned ? "Earned" : `${e.current}/${e.target}`}
-                  </span>
-                </div>
+                <EmblemTile key={e.key} emblem={e} variant="full" />
               ))}
             </div>
           </Card>

@@ -14,7 +14,8 @@ import { useSession } from "./auth-client";
 const emptyEmblems: Emblems = { emblems: [], earnedCount: 0, total: 0 };
 
 type EmblemsContextValue = {
-  emblems: Emblems;
+  // The whole emblem catalog for the current user (list + earned/total).
+  catalog: Emblems;
   // Re-fetch the catalog — call after an action that can earn emblems
   // (e.g. completing a block) so the collection and celebrations stay fresh.
   reload: () => Promise<void>;
@@ -31,12 +32,12 @@ const EmblemsContext = createContext<EmblemsContextValue | null>(null);
 export function EmblemsProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const authed = !!session?.user;
-  const [emblems, setEmblems] = useState<Emblems>(emptyEmblems);
+  const [catalog, setCatalog] = useState<Emblems>(emptyEmblems);
 
   const reload = useCallback(async () => {
     if (!authed) return;
     try {
-      setEmblems(await api.getEmblems());
+      setCatalog(await api.getEmblems());
     } catch {
       // A failed fetch just leaves the last-known catalog in place; the shared
       // request helper already redirects to login on a 401.
@@ -48,7 +49,7 @@ export function EmblemsProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   return (
-    <EmblemsContext.Provider value={{ emblems, reload }}>
+    <EmblemsContext.Provider value={{ catalog, reload }}>
       {children}
     </EmblemsContext.Provider>
   );

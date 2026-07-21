@@ -23,8 +23,8 @@ type ToastEntry =
  * toast; overflow beyond the cap collapses into a final "+N more" summary.
  */
 export function EmblemUnlockToastHost() {
-  const { emblems } = useEmblems();
-  const queue = useNewlyEarnedEmblems(emblems.emblems);
+  const { catalog } = useEmblems();
+  const queue = useNewlyEarnedEmblems(catalog.emblems);
   const [entries, setEntries] = useState<ToastEntry[]>([]);
   const [mounted, setMounted] = useState(false);
 

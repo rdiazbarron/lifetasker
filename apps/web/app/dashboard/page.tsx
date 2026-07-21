@@ -38,7 +38,7 @@ export default function DashboardPage() {
   // Emblems come from the shared context (single canonical fetch), not this
   // page's own request. Refresh them alongside progress after a completion so
   // a newly-earned emblem is picked up.
-  const { emblems, reload: reloadEmblems } = useEmblems();
+  const { catalog: emblems, reload: reloadEmblems } = useEmblems();
   const [status, setStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
 
