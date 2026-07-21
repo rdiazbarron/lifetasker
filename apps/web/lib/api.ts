@@ -94,6 +94,10 @@ export type Emblem = {
   target: number;
   current: number;
   earned: boolean;
+  // Art key `${group}-${rank}` (rank 1..3) → a bundled SVG on the frontend.
+  art: string;
+  // Category color for tinting category medals; null for other groups.
+  color: string | null;
 };
 
 export type Emblems = {

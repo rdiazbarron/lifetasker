@@ -31,7 +31,7 @@ describe("longestStreak", () => {
 
 describe("evaluateEmblems", () => {
   const base = {
-    categories: [{ id: "cat1", name: "Study" }],
+    categories: [{ id: "cat1", name: "Study", color: "#abcdef" }],
     categoryCounts: {} as Record<string, number>,
     longestStreakDays: 0,
     lifetimeLevel: 1,
@@ -73,10 +73,36 @@ describe("evaluateEmblems", () => {
     const emblems = evaluateEmblems({
       ...base,
       categories: [
-        { id: "a", name: "Study" },
-        { id: "b", name: "Sport" },
+        { id: "a", name: "Study", color: "#111111" },
+        { id: "b", name: "Sport", color: "#222222" },
       ],
     });
     expect(emblems.filter((e) => e.group === "category")).toHaveLength(6); // 2 cats * 3 tiers
+  });
+
+  it("derives the art key as `${group}-${rank}` with rank following tier order", () => {
+    const emblems = evaluateEmblems(base);
+    // Category tiers 10/50/100 -> ranks 1/2/3.
+    expect(find(emblems, "category:cat1:10").art).toBe("category-1");
+    expect(find(emblems, "category:cat1:50").art).toBe("category-2");
+    expect(find(emblems, "category:cat1:100").art).toBe("category-3");
+    // Streak tiers 7/30/100 -> ranks 1/2/3.
+    expect(find(emblems, "streak:7").art).toBe("streak-1");
+    expect(find(emblems, "streak:30").art).toBe("streak-2");
+    expect(find(emblems, "streak:100").art).toBe("streak-3");
+    // Level tiers 5/10/25 -> ranks 1/2/3.
+    expect(find(emblems, "level:5").art).toBe("level-1");
+    expect(find(emblems, "level:25").art).toBe("level-3");
+    // Perfect-week tiers 1/4/12 -> ranks 1/2/3.
+    expect(find(emblems, "perfect-week:1").art).toBe("perfect-week-1");
+    expect(find(emblems, "perfect-week:12").art).toBe("perfect-week-3");
+  });
+
+  it("tints category emblems with the category color and leaves others null", () => {
+    const emblems = evaluateEmblems(base);
+    expect(find(emblems, "category:cat1:10").color).toBe("#abcdef");
+    expect(find(emblems, "streak:7").color).toBeNull();
+    expect(find(emblems, "level:5").color).toBeNull();
+    expect(find(emblems, "perfect-week:1").color).toBeNull();
   });
 });

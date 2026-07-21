@@ -11,6 +11,7 @@ const navItems = [
   { href: "/categories", label: "Categories" },
   { href: "/weekly-plan", label: "Weekly Plan" },
   { href: "/dashboard", label: "Progress" },
+  { href: "/emblems", label: "Emblems" },
   { href: "/settings", label: "Settings" },
 ];
 
