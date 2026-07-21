@@ -47,7 +47,12 @@ describe("Emblems (e2e)", () => {
     userIds.push(user.id);
 
     const category = await prisma.category.create({
-      data: { key: `${TAG}-study-${stamp}`, name: "Study", userId: user.id },
+      data: {
+        key: `${TAG}-study-${stamp}`,
+        name: "Study",
+        color: "#0ea5e9",
+        userId: user.id,
+      },
     });
     const blockType = await prisma.blockType.create({
       data: {
@@ -133,5 +138,26 @@ describe("Emblems (e2e)", () => {
     expect(byKey.get("perfect-week:4").earned).toBe(false);
 
     expect(res.body.earnedCount).toBeGreaterThanOrEqual(4);
+  });
+
+  it("carries art and color per emblem", async () => {
+    const res = await request(app.getHttpServer())
+      .get("/api/v1/emblems")
+      .set("Cookie", cookieFor(token))
+      .expect(200);
+
+    // Every emblem has an art key of the form `${group}-${rank}`.
+    for (const e of res.body.emblems) {
+      expect(e.art).toMatch(/^(category|streak|level|perfect-week)-[123]$/);
+    }
+
+    // Category emblems carry the seeded category color; other groups are null.
+    const studyCat = res.body.emblems.find((e: any) =>
+      e.key.startsWith("category:"),
+    );
+    expect(studyCat.color).toBe("#0ea5e9");
+    expect(
+      res.body.emblems.find((e: any) => e.key === "streak:7").color,
+    ).toBeNull();
   });
 });

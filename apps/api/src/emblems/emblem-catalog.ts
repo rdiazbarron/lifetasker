@@ -19,7 +19,7 @@ export const PERFECT_WEEK_TIERS = [1, 4, 12];
 export type EmblemGroup = "category" | "streak" | "level" | "perfect-week";
 
 export type EmblemInput = {
-  categories: Array<{ id: string; name: string }>;
+  categories: Array<{ id: string; name: string; color: string }>;
   categoryCounts: Record<string, number>;
   longestStreakDays: number;
   lifetimeLevel: number;
@@ -34,6 +34,12 @@ export type Emblem = {
   target: number;
   current: number;
   earned: boolean;
+  // Bounded art reference `${group}-${rank}` where rank (1..3) is the tier's
+  // 1-based index within its group; the frontend maps this to a bundled SVG.
+  art: string;
+  // Category color (#rrggbb) for tinting category medals; null for the other
+  // groups, whose theming is decided frontend-side.
+  color: string | null;
 };
 
 /**
@@ -61,7 +67,7 @@ export function evaluateEmblems(input: EmblemInput): Emblem[] {
 
   for (const category of input.categories) {
     const count = input.categoryCounts[category.id] ?? 0;
-    for (const tier of CATEGORY_COUNT_TIERS) {
+    CATEGORY_COUNT_TIERS.forEach((tier, index) => {
       emblems.push({
         key: `category:${category.id}:${tier}`,
         group: "category",
@@ -70,11 +76,13 @@ export function evaluateEmblems(input: EmblemInput): Emblem[] {
         target: tier,
         current: count,
         earned: count >= tier,
+        art: `category-${index + 1}`,
+        color: category.color,
       });
-    }
+    });
   }
 
-  for (const tier of STREAK_TIERS) {
+  STREAK_TIERS.forEach((tier, index) => {
     emblems.push({
       key: `streak:${tier}`,
       group: "streak",
@@ -83,10 +91,12 @@ export function evaluateEmblems(input: EmblemInput): Emblem[] {
       target: tier,
       current: input.longestStreakDays,
       earned: input.longestStreakDays >= tier,
+      art: `streak-${index + 1}`,
+      color: null,
     });
-  }
+  });
 
-  for (const tier of LEVEL_TIERS) {
+  LEVEL_TIERS.forEach((tier, index) => {
     emblems.push({
       key: `level:${tier}`,
       group: "level",
@@ -95,10 +105,12 @@ export function evaluateEmblems(input: EmblemInput): Emblem[] {
       target: tier,
       current: input.lifetimeLevel,
       earned: input.lifetimeLevel >= tier,
+      art: `level-${index + 1}`,
+      color: null,
     });
-  }
+  });
 
-  for (const tier of PERFECT_WEEK_TIERS) {
+  PERFECT_WEEK_TIERS.forEach((tier, index) => {
     emblems.push({
       key: `perfect-week:${tier}`,
       group: "perfect-week",
@@ -107,8 +119,10 @@ export function evaluateEmblems(input: EmblemInput): Emblem[] {
       target: tier,
       current: input.perfectWeeks,
       earned: input.perfectWeeks >= tier,
+      art: `perfect-week-${index + 1}`,
+      color: null,
     });
-  }
+  });
 
   return emblems;
 }

@@ -21,7 +21,7 @@ export class EmblemsService {
 
     const categories = await this.prisma.category.findMany({
       where: { userId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, color: true },
       orderBy: { name: "asc" },
     });
 
