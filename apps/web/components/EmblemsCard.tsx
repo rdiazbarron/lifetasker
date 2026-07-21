@@ -1,8 +1,6 @@
 "use client";
 
 import { Card } from "@heroui/react";
-import { useEffect, useState } from "react";
-import { useSession } from "../lib/auth-client";
 import { Emblem, Emblems } from "../lib/api";
 import { EmblemBadge } from "./EmblemBadge";
 
@@ -13,38 +11,8 @@ const GROUP_LABELS: Record<Emblem["group"], string> = {
   "perfect-week": "Perfect weeks",
 };
 
-const seenKeyFor = (userId: string) => `lifetasker.seen-emblems:${userId}`;
-
 export function EmblemsCard({ emblems: data }: { emblems: Emblems }) {
   const { emblems, earnedCount, total } = data;
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-  const [newlyEarned, setNewlyEarned] = useState<Emblem[]>([]);
-
-  // Surface emblems earned since the last visit, then remember them as seen.
-  // Scoped per user so a shared browser doesn't leak one user's "seen" set to
-  // another. On the very first visit (no stored set), seed silently instead of
-  // celebrating every retroactively-earned emblem at once.
-  useEffect(() => {
-    if (!userId) return;
-    const seenKey = seenKeyFor(userId);
-    const earnedKeys = emblems.filter((e) => e.earned).map((e) => e.key);
-    const stored = localStorage.getItem(seenKey);
-    if (stored === null) {
-      localStorage.setItem(seenKey, JSON.stringify(earnedKeys));
-      return;
-    }
-    let seen: string[] = [];
-    try {
-      seen = JSON.parse(stored);
-    } catch {
-      seen = [];
-    }
-    const seenSet = new Set(seen);
-    const fresh = emblems.filter((e) => e.earned && !seenSet.has(e.key));
-    if (fresh.length > 0) setNewlyEarned(fresh);
-    localStorage.setItem(seenKey, JSON.stringify(earnedKeys));
-  }, [emblems, userId]);
 
   const groups = Object.keys(GROUP_LABELS) as Emblem["group"][];
 
@@ -56,14 +24,6 @@ export function EmblemsCard({ emblems: data }: { emblems: Emblems }) {
           {earnedCount}/{total} earned
         </span>
       </div>
-
-      {newlyEarned.length > 0 && (
-        <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-          🎉 New{" "}
-          {newlyEarned.length === 1 ? "emblem" : `emblems (${newlyEarned.length})`}
-          : {newlyEarned.map((e) => e.name).join(", ")}
-        </div>
-      )}
 
       <div className="mt-4 space-y-5">
         {groups.map((group) => {
