@@ -10,19 +10,19 @@ import {
 } from "class-validator";
 
 class PlanItemDto {
-  @IsString() @IsNotEmpty() blockTypeId: string;
-  @IsInt() @Min(1) targetCount: number;
+  @IsString() @IsNotEmpty() blockTypeId!: string;
+  @IsInt() @Min(1) targetCount!: number;
 }
 export class CreateWeeklyPlanDto {
-  @IsDateString() weekStartDate: string;
+  @IsDateString() weekStartDate!: string;
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PlanItemDto)
-  items: PlanItemDto[];
+  items!: PlanItemDto[];
 }
 export class UpdateWeeklyPlanItemsDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PlanItemDto)
-  items: PlanItemDto[];
+  items!: PlanItemDto[];
 }

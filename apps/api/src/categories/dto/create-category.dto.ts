@@ -14,7 +14,7 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 export class CreateCategoryDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   // Importance bonus as a percent. Capped to 0..100 (baseline to double); no
   // below-baseline penalties are allowed.
