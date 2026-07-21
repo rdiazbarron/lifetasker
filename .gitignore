@@ -62,3 +62,8 @@ Thumbs.db
 # Lockfiles de otros gestores (si solo usas npm)
 pnpm-lock.yaml
 yarn.lock
+
+## Local agent tooling (personal, not shared)
+.agents/skills/
+.claude/skills/
+.scratch/
