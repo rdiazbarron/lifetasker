@@ -9,11 +9,11 @@ import { ProgressByBlockType } from "../../components/ProgressByBlockType";
 import { ProgressByCategory } from "../../components/ProgressByCategory";
 import { WeekOverviewGrid } from "../../components/WeekOverviewGrid";
 import { WeeklyLevelCard } from "../../components/WeeklyLevelCard";
-import { api, Emblems, Overview, Progress } from "../../lib/api";
+import { api, Overview, Progress } from "../../lib/api";
+import { useEmblems } from "../../lib/emblems-context";
 import { useQuery } from "../../lib/useQuery";
 
 const emptyOverview: Overview = { categories: [], weeks: [] };
-const emptyEmblems: Emblems = { emblems: [], earnedCount: 0, total: 0 };
 
 const empty: Progress = { totalTargetBlocks: 0, totalCompletedBlocks: 0, pointsThisWeek: 0, progressPercentage: 0, progressByBlockType: [], progressByCategory: [], weeklyLevel: 1, lifetime: { level: 1, totalPoints: 0, pointsIntoLevel: 0, pointsForNextLevel: 100, pointsToNextLevel: 100, progressPercent: 0 } };
 
@@ -24,20 +24,21 @@ export default function DashboardPage() {
       api.getBlockTypes(),
       api.getCurrentWeekCompletions(),
       api.getOverview(),
-      api.getEmblems(),
-    ]).then(([progress, blockTypes, completions, overview, emblems]) => ({
+    ]).then(([progress, blockTypes, completions, overview]) => ({
       progress,
       blockTypes,
       completions,
       overview,
-      emblems,
     })),
   );
   const progress = data?.progress ?? empty;
   const blockTypes = data?.blockTypes ?? [];
   const completions = data?.completions ?? [];
   const overview = data?.overview ?? emptyOverview;
-  const emblems = data?.emblems ?? emptyEmblems;
+  // Emblems come from the shared context (single canonical fetch), not this
+  // page's own request. Refresh them alongside progress after a completion so
+  // a newly-earned emblem is picked up.
+  const { emblems, reload: reloadEmblems } = useEmblems();
   const [status, setStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
 
@@ -131,13 +132,13 @@ export default function DashboardPage() {
                       onPress={async () => {
                         await api.undoLastCompletedBlock(bt.id);
                         setStatus(`Undid last ${bt.name} completion.`);
-                        await reload();
+                        await Promise.all([reload(), reloadEmblems()]);
                       }}
                       className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-200 transition hover:border-slate-600"
                     >
                       Undo
                     </Button>
-                    <CompleteBlockButton onClick={async () => { await api.completeBlock({ blockTypeId: bt.id }); setStatus(`Completed one ${bt.name} block.`); await reload(); }} />
+                    <CompleteBlockButton onClick={async () => { await api.completeBlock({ blockTypeId: bt.id }); setStatus(`Completed one ${bt.name} block.`); await Promise.all([reload(), reloadEmblems()]); }} />
                   </div>
                 </li>
               ))}
