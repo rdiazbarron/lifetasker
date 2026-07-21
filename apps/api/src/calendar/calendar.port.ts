@@ -11,6 +11,13 @@
  * The abstract class doubles as the DI injection token (see calendar.module.ts).
  */
 export interface CalendarEventInput {
+  /**
+   * Caller-supplied, deterministic event id derived from the completion id
+   * (#47). Passing it makes `createEvent` a create-or-get: a retry after a
+   * create-ok/persist-fail crash inserts the same id and no duplicate event is
+   * made. See calendar/event-id.ts.
+   */
+  eventId: string;
   /** Event title — the block type's name. */
   summary: string;
   /** Human-readable body — category, points earned, and any notes. */
