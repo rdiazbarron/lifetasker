@@ -4,6 +4,7 @@ import { Card } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { useSession } from "../lib/auth-client";
 import { Emblem, Emblems } from "../lib/api";
+import { EmblemBadge } from "./EmblemBadge";
 
 const GROUP_LABELS: Record<Emblem["group"], string> = {
   category: "Category milestones",
@@ -73,7 +74,7 @@ export function EmblemsCard({ emblems: data }: { emblems: Emblems }) {
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
                 {GROUP_LABELS[group]}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {items.map((e) => (
                   <div
                     key={e.key}
@@ -84,14 +85,22 @@ export function EmblemsCard({ emblems: data }: { emblems: Emblems }) {
                     }
                     className={
                       e.earned
-                        ? "rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-1.5 text-sm font-medium text-amber-200"
-                        : "rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-1.5 text-sm text-slate-500"
+                        ? "flex w-24 flex-col items-center gap-1 rounded-xl border border-amber-400/30 bg-amber-500/10 p-2 text-center"
+                        : "flex w-24 flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-950/60 p-2 text-center"
                     }
                   >
-                    {e.earned ? "🏅 " : "🔒 "}
-                    {e.name}
+                    <EmblemBadge emblem={e} size={48} />
+                    <span
+                      className={
+                        e.earned
+                          ? "text-xs font-medium text-amber-200"
+                          : "text-xs text-slate-500"
+                      }
+                    >
+                      {e.name}
+                    </span>
                     {!e.earned && (
-                      <span className="ml-1 text-xs text-slate-600">
+                      <span className="text-[10px] text-slate-600">
                         {e.current}/{e.target}
                       </span>
                     )}
