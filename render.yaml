@@ -85,8 +85,12 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      # Shows the "Connect Google Calendar" UI. This is a NEXT_PUBLIC_* flag, so
+      # it is baked in at BUILD time — changing it requires a redeploy, not just
+      # a restart. Keep it "true" only while the OAuth credentials below are
+      # actually set, or users get a Connect button that errors. (See NOTE #3.)
       - key: NEXT_PUBLIC_GOOGLE_ENABLED
-        value: "false"
+        value: "true"
 
 # NOTE — the manual dashboard steps:
 #
@@ -110,3 +114,21 @@ services:
 #      lifetasker-api:
 #        CORS_ORIGINS        = https://lifetasker-web.onrender.com
 #    (Render may append a suffix if a name is taken — use the real URLs shown.)
+#
+# 3) GOOGLE CALENDAR (optional — enables "Connect Google Calendar") — the code
+#    is already deployed; it stays dark until these credentials exist. Steps:
+#      a) Google Cloud Console -> APIs & Services:
+#         - Enable the "Google Calendar API".
+#         - OAuth consent screen: keep it in "Testing" mode and add your Google
+#           account as a Test user (Calendar is a sensitive scope, so an
+#           unverified app can only be used by allowlisted testers).
+#         - Create an OAuth 2.0 Client ID (type: Web application). Add this
+#           Authorized redirect URI (Better Auth's callback):
+#             https://lifetasker-web.onrender.com/api/auth/callback/google
+#      b) Paste the client id/secret into the Render dashboard on BOTH services
+#         (the API needs them to refresh tokens for calendar writes):
+#           lifetasker-web:  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#           lifetasker-api:  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#      c) NEXT_PUBLIC_GOOGLE_ENABLED is "true" above — it is baked in at build,
+#         so trigger a redeploy of lifetasker-web after setting the credentials.
+#    Then: Settings -> "Connect Google Calendar" -> grant Calendar access.
