@@ -69,6 +69,11 @@ services:
         sync: false
       - key: NEXT_PUBLIC_API_URL
         sync: false
+      # Better Auth reads its trustedOrigins list from CORS_ORIGINS — the web
+      # app rejects sign-in/up with "Invalid origin" without it. Set this to
+      # the web app's own public URL (same value as BETTER_AUTH_URL).
+      - key: CORS_ORIGINS
+        sync: false
       # Google Calendar (optional).
       - key: GOOGLE_CLIENT_ID
         sync: false
@@ -84,7 +89,7 @@ services:
 #    BOTH lifetasker-api and lifetasker-web. Then run the initial migration
 #    once from your machine against that string:
 #      DATABASE_URL="<neon-url>" npm run prisma:migrate:deploy -w apps/api
-#    (Later deploys run migrations automatically via preDeployCommand.)
+#    (Later deploys run migrations automatically via the API startCommand.)
 #
 # 2) URLs (a chicken-and-egg — do after the first deploy) — Render assigns each
 #    service a URL like https://<name>.onrender.com. Once you can see both,
@@ -92,6 +97,9 @@ services:
 #      lifetasker-web:
 #        BETTER_AUTH_URL     = https://lifetasker-web.onrender.com
 #        NEXT_PUBLIC_API_URL = https://lifetasker-api.onrender.com/api/v1
+#        CORS_ORIGINS        = https://lifetasker-web.onrender.com  (its OWN
+#                              URL — Better Auth's trustedOrigins; without it
+#                              sign-in fails with "Invalid origin")
 #      lifetasker-api:
 #        CORS_ORIGINS        = https://lifetasker-web.onrender.com
 #    (Render may append a suffix if a name is taken — use the real URLs shown.)
