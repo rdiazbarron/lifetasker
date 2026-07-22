@@ -67,7 +67,20 @@ export const auth = betterAuth({
       }
     : {}),
   user: { modelName: "User" },
-  session: { modelName: "Session" },
+  session: {
+    modelName: "Session",
+    // Keep people signed in far longer so a returning user isn't forced to
+    // retype their credentials. The session is ROLLING: every time it is used
+    // and is older than `updateAge`, Better Auth extends its expiry by another
+    // `expiresIn`. So anyone who visits at least once a month stays logged in
+    // indefinitely; only a full month away logs them out.
+    //
+    // This is the ceiling — the login form's "Remember me" checkbox decides
+    // whether the browser actually persists the cookie this long (checked) or
+    // drops it when the browser closes (unchecked, via `rememberMe: false`).
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    updateAge: 60 * 60 * 24, // refresh the expiry at most once per day
+  },
   account: {
     modelName: "Account",
     // Let an existing email/password user attach Google to their SAME account
