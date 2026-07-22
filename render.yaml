@@ -1,0 +1,96 @@
+# Render Blueprint — provisions the compute in one project:
+#   - lifetasker-api  : the NestJS server (apps/api)
+#   - lifetasker-web  : the Next.js app (apps/web)
+#
+# The DATABASE lives on Neon (https://neon.tech), NOT on Render — its free tier
+# is forever (Render's free Postgres is deleted after 30 days). Create a free
+# Neon project, then paste its connection string into DATABASE_URL on BOTH
+# services in the Render dashboard (see NOTE at the bottom).
+#
+# Deploy: push this file, then in Render click "New +" -> "Blueprint" and pick
+# this repo. Render reads this file and creates both services at once.
+#
+# Connection string, pooled vs direct: both services are long-running Node
+# processes (NOT serverless), so each keeps one normal connection pool. Neon's
+# plain (unpooled) connection string is fine here — the pooled/pgBouncer
+# variant only matters for serverless platforms like Vercel.
+
+services:
+  # --- NestJS API (apps/api) -------------------------------------------------
+  - type: web
+    name: lifetasker-api
+    runtime: node
+    plan: free
+    rootDir: . # build from the repo root so npm workspaces resolve
+    buildCommand: >-
+      npm ci &&
+      npm run prisma:generate -w apps/api &&
+      npm run build -w apps/api
+    # Migrations run once per deploy, before the new version goes live. Prisma
+    # owns the schema; Better Auth (in the web app) only reads/writes rows.
+    preDeployCommand: npm run prisma:migrate:deploy -w apps/api
+    startCommand: npm run start -w apps/api
+    healthCheckPath: /api/v1/health
+    envVars:
+      # Paste your Neon connection string here in the Render dashboard.
+      - key: DATABASE_URL
+        sync: false
+      # Comma-separated origins allowed to call the API with cookies. Set this
+      # to the web app's public URL after the first deploy (see NOTE below).
+      - key: CORS_ORIGINS
+        sync: false
+      # Google Calendar (optional) — leave blank to disable Google entirely.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+  # --- Next.js web app (apps/web) --------------------------------------------
+  - type: web
+    name: lifetasker-web
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm ci && npm run build -w apps/web
+    startCommand: npm run start -w apps/web
+    envVars:
+      # Same Neon database as the API — Better Auth persists into the SAME
+      # tables. Paste the identical connection string here in the dashboard.
+      - key: DATABASE_URL
+        sync: false
+      # Session-signing secret — Render generates a strong random value once.
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      # These are the web app's own URL and the API's URL. They can't be
+      # cross-referenced automatically in a blueprint, so set them by hand in
+      # the dashboard after the first deploy (see NOTE below).
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      # Google Calendar (optional).
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_GOOGLE_ENABLED
+        value: "false"
+
+# NOTE — the manual dashboard steps:
+#
+# 1) DATABASE (do this first) — create a free project at https://neon.tech,
+#    copy its connection string, and paste the SAME value into DATABASE_URL on
+#    BOTH lifetasker-api and lifetasker-web. Then run the initial migration
+#    once from your machine against that string:
+#      DATABASE_URL="<neon-url>" npm run prisma:migrate:deploy -w apps/api
+#    (Later deploys run migrations automatically via preDeployCommand.)
+#
+# 2) URLs (a chicken-and-egg — do after the first deploy) — Render assigns each
+#    service a URL like https://<name>.onrender.com. Once you can see both,
+#    fill in these values and redeploy:
+#      lifetasker-web:
+#        BETTER_AUTH_URL     = https://lifetasker-web.onrender.com
+#        NEXT_PUBLIC_API_URL = https://lifetasker-api.onrender.com/api/v1
+#      lifetasker-api:
+#        CORS_ORIGINS        = https://lifetasker-web.onrender.com
+#    (Render may append a suffix if a name is taken — use the real URLs shown.)

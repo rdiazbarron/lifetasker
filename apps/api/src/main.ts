@@ -30,7 +30,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  await app.listen(4000);
+  // Bind to the platform-provided port (Render/Railway inject PORT) and to
+  // 0.0.0.0 so the host's health check can reach the container. Falls back to
+  // 4000 for local dev.
+  await app.listen(process.env.PORT ?? 4000, "0.0.0.0");
 }
 
 bootstrap();
