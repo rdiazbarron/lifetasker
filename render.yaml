@@ -67,7 +67,13 @@ services:
       # the dashboard after the first deploy (see NOTE below).
       - key: BETTER_AUTH_URL
         sync: false
+      # The browser calls the API through a same-origin proxy so the session
+      # cookie is sent (see next.config.mjs). NEXT_PUBLIC_API_URL is the
+      # relative proxy path; API_PROXY_TARGET is the real API URL that Next
+      # forwards to server-side.
       - key: NEXT_PUBLIC_API_URL
+        value: /api/proxy
+      - key: API_PROXY_TARGET
         sync: false
       # Better Auth reads its trustedOrigins list from CORS_ORIGINS — the web
       # app rejects sign-in/up with "Invalid origin" without it. Set this to
@@ -96,7 +102,8 @@ services:
 #    fill in these values and redeploy:
 #      lifetasker-web:
 #        BETTER_AUTH_URL     = https://lifetasker-web.onrender.com
-#        NEXT_PUBLIC_API_URL = https://lifetasker-api.onrender.com/api/v1
+#        NEXT_PUBLIC_API_URL = /api/proxy            (relative — leave as-is)
+#        API_PROXY_TARGET    = https://lifetasker-api.onrender.com/api/v1
 #        CORS_ORIGINS        = https://lifetasker-web.onrender.com  (its OWN
 #                              URL — Better Auth's trustedOrigins; without it
 #                              sign-in fails with "Invalid origin")
