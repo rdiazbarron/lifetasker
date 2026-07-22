@@ -1,0 +1,52 @@
+# Keeps the Render free-tier API awake.
+#
+# Render's free plan spins a service down after ~15 min of inactivity; the next
+# request then eats a ~60s cold start and, while the API boots, the web app's
+# /api/proxy/* calls return 502. This workflow pings the API health endpoint on
+# a schedule so it never goes idle long enough to sleep.
+#
+# The ping is EXTERNAL (GitHub's runners) on purpose — a sleeping service can't
+# wake itself. Set the API health URL as a repo variable so it isn't hardcoded:
+#   Settings -> Secrets and variables -> Actions -> Variables -> New:
+#     name  = API_HEALTH_URL
+#     value = https://lifetasker-api.onrender.com/api/v1/health
+#
+# Schedule: every 12 min, ONLY during Bolivia (UTC-4) waking hours,
+# 07:00–00:00 BOT. Restricting the window (vs pinging 24/7) keeps us well under
+# both free-tier budgets: GitHub Actions' 2,000 min/month on private repos AND
+# Render's ~750 free instance-hours/month — a service kept awake round the clock
+# would nearly exhaust the latter and get suspended late in the month.
+#
+# GitHub cron is in UTC, so 07:00–00:00 BOT = 11:00 UTC through 04:00 UTC (it
+# wraps past UTC midnight, hence the split ranges below).
+#
+# Notes / limits (inherent to free GitHub Actions, not this repo):
+#   - cron granularity is best-effort; runs can be delayed several minutes under
+#     load, so 12 min stays comfortably under the 15-min sleep window.
+#   - GitHub auto-disables scheduled workflows after 60 days with no repo
+#     activity — re-enable it from the Actions tab if that happens.
+name: keep-warm
+
+on:
+  schedule:
+    - cron: "*/12 11-23 * * *" # 11:00–23:59 UTC = 07:00–19:59 BOT
+    - cron: "*/12 0-3 * * *" # 00:00–03:59 UTC = 20:00–23:59 BOT
+    - cron: "0 4 * * *" # 04:00 UTC = 00:00 BOT (midnight, sharp)
+  workflow_dispatch: {} # allow manual "wake it now" runs
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health endpoint
+        run: |
+          URL="${{ vars.API_HEALTH_URL }}"
+          if [ -z "$URL" ]; then
+            echo "::error::Repo variable API_HEALTH_URL is not set."
+            exit 1
+          fi
+          # -m 90 tolerates a full cold start if the service happened to be asleep.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -m 90 --retry 2 --retry-all-errors "$URL")
+          echo "GET $URL -> HTTP $code"
+          # 2xx/3xx means it's up (or waking); anything else is a real failure.
+          [ "$code" -ge 200 ] && [ "$code" -lt 400 ]
