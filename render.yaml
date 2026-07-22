@@ -26,10 +26,11 @@ services:
       npm ci &&
       npm run prisma:generate -w apps/api &&
       npm run build -w apps/api
-    # Migrations run once per deploy, before the new version goes live. Prisma
-    # owns the schema; Better Auth (in the web app) only reads/writes rows.
-    preDeployCommand: npm run prisma:migrate:deploy -w apps/api
-    startCommand: npm run start -w apps/api
+    # Migrations run just before the server boots (Render's free tier does not
+    # support a separate preDeployCommand). `migrate deploy` is a no-op when
+    # nothing is pending, so this stays cheap on every restart. Prisma owns the
+    # schema; Better Auth (in the web app) only reads/writes rows.
+    startCommand: npm run prisma:migrate:deploy -w apps/api && npm run start -w apps/api
     healthCheckPath: /api/v1/health
     envVars:
       # Paste your Neon connection string here in the Render dashboard.
