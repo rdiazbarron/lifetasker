@@ -2,11 +2,11 @@
 
 import { Button, Card, Spinner } from "@heroui/react";
 import { useMemo, useState } from "react";
-import { CompleteBlockButton } from "../../components/CompleteBlockButton";
 import { ContributionHeatmap } from "../../components/ContributionHeatmap";
 import { EmblemsCard } from "../../components/EmblemsCard";
 import { ProgressByBlockType } from "../../components/ProgressByBlockType";
 import { ProgressByCategory } from "../../components/ProgressByCategory";
+import { QuickComplete } from "../../components/QuickComplete";
 import { WeekOverviewGrid } from "../../components/WeekOverviewGrid";
 import { WeeklyLevelCard } from "../../components/WeeklyLevelCard";
 import { api, Overview, Progress } from "../../lib/api";
@@ -138,7 +138,7 @@ export default function DashboardPage() {
                     >
                       Undo
                     </Button>
-                    <CompleteBlockButton onClick={async () => { await api.completeBlock({ blockTypeId: bt.id }); setStatus(`Completed one ${bt.name} block.`); await Promise.all([reload(), reloadEmblems()]); }} />
+                    <QuickComplete blockTypeName={bt.name} onComplete={async (notes) => { await api.completeBlock({ blockTypeId: bt.id, notes }); setStatus(`Completed one ${bt.name} block.`); await Promise.all([reload(), reloadEmblems()]); }} />
                   </div>
                 </li>
               ))}

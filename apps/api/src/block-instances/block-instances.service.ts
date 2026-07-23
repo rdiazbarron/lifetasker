@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import type { BlockInstance, BlockType, Category } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserContextService } from "../common/user-context.service";
@@ -277,6 +282,31 @@ export class BlockInstancesService {
       where: { userId, completedAt: { gte: weekStart, lte: weekEnd } },
       include: { blockType: { include: { category: true } } },
       orderBy: { completedAt: "desc" },
+    });
+  }
+
+  /**
+   * Every completion on a single calendar day, oldest first, with its block
+   * type, category, and note. Backs the history "click a day to see what you
+   * did" view. The day is bucketed in UTC to match the heatmap, which keys each
+   * completion on `completedAt.toISOString().slice(0, 10)` — so a cell there and
+   * this list always agree on which completions belong to a given date.
+   */
+  async day(date: string) {
+    const userId = await this.userContext.userId();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "")) {
+      throw new BadRequestException("date must be in YYYY-MM-DD format");
+    }
+    const [year, month, dayOfMonth] = date.split("-").map(Number);
+    const start = new Date(Date.UTC(year, month - 1, dayOfMonth));
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 1); // exclusive upper bound: next UTC day
+
+    return this.prisma.blockInstance.findMany({
+      where: { userId, completedAt: { gte: start, lt: end } },
+      include: { blockType: { include: { category: true } } },
+      orderBy: { completedAt: "asc" },
     });
   }
 }

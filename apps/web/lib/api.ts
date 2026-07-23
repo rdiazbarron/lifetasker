@@ -38,10 +38,28 @@ export type BlockInstance = {
   id: string;
   blockTypeId: string;
   completedAt: string;
+  // Optional free-text note the user wrote when completing ("what did I do?").
+  // Null when they skipped it. Surfaced in the day-history view.
+  notes: string | null;
   // Google Calendar sync (#35/#36). PENDING means the completion hasn't reached
   // the calendar yet; NOT_APPLICABLE means the user isn't calendar-connected.
   calendarSyncStatus: CalendarSyncStatus;
   googleEventId: string | null;
+};
+
+// A completion as returned by the day-history endpoint: the row plus its block
+// type and category, so the history modal can show name, duration, and colour.
+export type DayCompletion = {
+  id: string;
+  completedAt: string;
+  notes: string | null;
+  points: number;
+  blockType: {
+    id: string;
+    name: string;
+    durationMinutes: number;
+    category: { name: string; color: string };
+  };
 };
 
 export type SyncSummary = { synced: number; pending: number };
@@ -205,6 +223,10 @@ export const api = {
   undoLastCompletedBlock: (blockTypeId: string) =>
     request<BlockInstance>(`/block-instances/complete/${blockTypeId}`, { method: "DELETE" }),
   getCurrentWeekCompletions: () => request<BlockInstance[]>("/block-instances/current-week"),
+  getDayCompletions: (date: string) =>
+    request<DayCompletion[]>(
+      `/block-instances/day?date=${encodeURIComponent(date)}`,
+    ),
   syncCalendar: () =>
     request<SyncSummary>("/block-instances/sync", { method: "POST" }),
   getCurrentProgress: () => request<Progress>("/progress/current-week"),

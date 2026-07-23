@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { BlockInstancesService } from "./block-instances.service";
 import { CompleteBlockDto } from "./dto/complete-block.dto";
 @Controller("block-instances")
@@ -12,6 +20,11 @@ export class BlockInstancesController {
   }
   @Get("current-week") currentWeek() {
     return this.service.currentWeek();
+  }
+  // Completions for a single calendar day (UTC), so the history view can show
+  // "what did I actually do on this day?" — including each completion's note.
+  @Get("day") day(@Query("date") date: string) {
+    return this.service.day(date);
   }
   @Post("sync") syncNow() {
     return this.service.syncNow();

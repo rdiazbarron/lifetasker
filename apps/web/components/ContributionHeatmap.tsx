@@ -3,6 +3,7 @@
 import { Card, Spinner } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import { api, Heatmap, hexWithAlpha } from "../lib/api";
+import { DayActivitiesModal } from "./DayActivitiesModal";
 
 // Only the fields the picker needs; matches the overview endpoint's category shape.
 type PickerCategory = { id: string; name: string; color: string };
@@ -63,6 +64,8 @@ export function ContributionHeatmap({
   const [selected, setSelected] = useState<string>(ALL);
   const [data, setData] = useState<Heatmap | null>(null);
   const [loading, setLoading] = useState(true);
+  // The day whose detail modal is open (its completions + notes), or null.
+  const [openDay, setOpenDay] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -134,14 +137,28 @@ export function ContributionHeatmap({
                   {col.map((cell, ri) =>
                     cell === null ? (
                       <div key={ri} className="h-3 w-3" />
+                    ) : cell.count > 0 ? (
+                      // Days with activity are clickable: open the detail modal
+                      // to read what was done (and any notes) that day.
+                      <button
+                        key={ri}
+                        type="button"
+                        onClick={() => setOpenDay(cell.date)}
+                        aria-label={`${cell.date}: ${cell.count} ${
+                          cell.count === 1 ? "block" : "blocks"
+                        }`}
+                        className="h-3 w-3 cursor-pointer rounded-sm transition hover:ring-2 hover:ring-slate-400/60"
+                        style={cellStyle(cell.count)}
+                        title={`${cell.date}: ${cell.count} ${
+                          cell.count === 1 ? "block" : "blocks"
+                        }`}
+                      />
                     ) : (
                       <div
                         key={ri}
                         className="h-3 w-3 rounded-sm"
                         style={cellStyle(cell.count)}
-                        title={`${cell.date}: ${cell.count} ${
-                          cell.count === 1 ? "block" : "blocks"
-                        }`}
+                        title={`${cell.date}: 0 blocks`}
                       />
                     ),
                   )}
@@ -163,6 +180,10 @@ export function ContributionHeatmap({
             <span>More</span>
           </div>
         </>
+      )}
+
+      {openDay && (
+        <DayActivitiesModal date={openDay} onClose={() => setOpenDay(null)} />
       )}
     </Card>
   );
