@@ -44,7 +44,9 @@ export class BlockInstancesService {
     // The block type must belong to the caller; this also gives us the duration
     // and the category weight to score the completion.
     const blockType = await this.prisma.blockType.findFirst({
-      where: { id: dto.blockTypeId, userId },
+      // archivedAt: null — a soft-deleted block type can't accept new
+      // completions (it's hidden from the UI, but block the API path too).
+      where: { id: dto.blockTypeId, userId, archivedAt: null },
       include: { category: true },
     });
     if (!blockType) {

@@ -37,7 +37,11 @@ export class BlockTypesService {
 
   async findAll() {
     const db = await this.scoped();
+    // Archived block types are soft-deleted: hidden here (and thus from the
+    // planner and quick-complete, which both read this) while their history is
+    // preserved. See remove().
     return db.blockType.findMany({
+      where: { archivedAt: null },
       include: { category: true },
       orderBy: { name: "asc" },
     });
@@ -60,14 +64,17 @@ export class BlockTypesService {
   }
 
   async remove(id: string) {
+    // Scoped read enforces ownership: another user's id resolves to not-found.
     await this.findOne(id);
-    try {
-      await this.prisma.blockType.delete({ where: { id } });
-      return { message: "Block type deleted" };
-    } catch {
-      throw new BadRequestException(
-        "Block type cannot be deleted because it is used in existing plans or completions.",
-      );
-    }
+    // Soft delete: stamp archivedAt rather than DELETE. A hard delete is
+    // rejected by the DB whenever the type has plan items or completions
+    // (onDelete: Restrict), and would erase the points/emblems those
+    // completions earned. Idempotent — archiving an already-archived type is a
+    // no-op re-stamp.
+    await this.prisma.blockType.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+    });
+    return { message: "Block type deleted" };
   }
 }

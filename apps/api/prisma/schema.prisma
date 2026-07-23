@@ -104,6 +104,12 @@ model BlockType {
   name            String
   durationMinutes Int
   description     String?
+  // Soft delete. A block type referenced by any past completion or weekly
+  // target can't be hard-deleted (onDelete: Restrict below), and doing so would
+  // erase the points/emblems those completions earned. Instead, "deleting"
+  // stamps archivedAt: the row is hidden from every list, planner, and
+  // quick-complete, but its history stays intact. null = active.
+  archivedAt      DateTime?
   weeklyPlanItems WeeklyPlanItem[]
   blockInstances BlockInstance[]
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -113,6 +119,7 @@ model BlockType {
 
   @@index([userId])
   @@index([categoryId])
+  @@index([userId, archivedAt])
   @@unique([userId, name])
 }
 
